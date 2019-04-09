@@ -269,7 +269,7 @@ public class AvatarManager
             avatarRoot.getTransform().setPosition(-bv.center.x, -bv.center.y, -bv.center.z);
         }
 
-        public void onAnimationFinished(SXRAvatar avatar, SXRAnimator animator, SXRAnimation animation) { }
+        public void onAnimationFinished(SXRAvatar avatar, SXRAnimator animator) { }
 
         public void onAnimationStarted(SXRAvatar avatar, SXRAnimator animator) { }
     };

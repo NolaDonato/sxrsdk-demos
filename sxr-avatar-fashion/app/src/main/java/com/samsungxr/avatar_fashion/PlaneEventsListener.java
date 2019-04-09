@@ -33,14 +33,7 @@ public class PlaneEventsListener implements IPlaneEvents {
     }
 
     @Override
-    public void onStartPlaneDetection(IMixedReality mr) {
-        mUtility.initCursorController(mSXRContext,
-                mTouchHandler,
-                mr.getScreenDepth());
-    }
-
-    @Override
-    public void onStopPlaneDetection(IMixedReality mr) { }
+    public void onPlaneGeometryChange(SXRPlane plane) { }
 
     @Override
     public void onPlaneDetected(SXRPlane plane) {
@@ -58,7 +51,6 @@ public class PlaneEventsListener implements IPlaneEvents {
             getNode().attachComponent(plane);
         }
     }
-
 
     private void placeAvatar(float[] pose) {
         SXRAnchor   anchor = (SXRAnchor) mAvatarAnchor.getNode().getComponent(SXRAnchor.getComponentType());
