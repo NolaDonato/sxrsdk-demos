@@ -18,15 +18,22 @@ import com.samsungxr.animation.SXRAnimation;
 import com.samsungxr.animation.SXRAnimator;
 import com.samsungxr.animation.SXRAvatar;
 import com.samsungxr.animation.SXRRepeatMode;
+import com.samsungxr.animation.SXRSkeleton;
+import com.samsungxr.animation.keyframe.SXRSkeletonAnimation;
 import com.samsungxr.nodes.SXRSphereNode;
+import com.samsungxr.physics.SXRPhysicsLoader;
 
 import java.io.IOException;
 import java.io.InputStream;
 
-public class AvatarMain extends SXRMain {
-    private final String mModelPath = "YBot/ybot.fbx";
-    private final String[] mAnimationPaths =  { "YBot/Zombie_Stand_Up_mixamo.com.bvh", "YBot/Football_Hike_mixamo.com.bvh" };
-    private final String mBoneMapPath = "animation/mixamo/mixamo_map.txt";
+public class AvatarMain extends SXRMain
+{
+//    private final String mModelPath = "YBot/ybot.fbx";
+    //private final String[] mAnimationPaths =  { "YBot/Zombie_Stand_Up_mixamo.com.bvh", "YBot/Football_Hike_mixamo.com.bvh" };
+    //private final String mBoneMapPath = "animation/mixamo/mixamo_map.txt";
+    private final String mModelPath = "female_caucasian_adult/FemaleBody.gltf";
+    private final String[] mAnimationPaths =  { "animation/Motion_Body_HappyDance.bvh" };
+    private final String mBoneMapPath = "female_caucasian_adult/DMbonemap.txt";
     private static final String TAG = "AVATAR";
     private SXRContext mContext;
     private SXRScene mScene;
@@ -38,14 +45,14 @@ public class AvatarMain extends SXRMain {
         mActivity = activity;
     }
 
-    private SXRAvatar.IAvatarEvents mAvatarListener = new SXRAvatar.IAvatarEvents() {
+    private SXRAvatar.IAvatarEvents mAvatarListener = new SXRAvatar.IAvatarEvents()
+    {
         @Override
         public void onAvatarLoaded(final SXRAvatar avatar, final SXRNode avatarRoot, String filePath, String errors)
         {
             if (avatarRoot.getParent() == null)
             {
                 mScene.addNode(avatarRoot);
-                loadNextAnimation(avatar, mBoneMap);
                 mContext.runOnGlThreadPostRender(1, new Runnable()
                 {
                     public void run()
@@ -54,10 +61,26 @@ public class AvatarMain extends SXRMain {
                         float sf = 1.0f / bv.radius;
                         avatarRoot.getTransform().setScale(sf, sf, sf);
                         bv = avatarRoot.getBoundingVolume();
-                        avatarRoot.getTransform().setPosition(-bv.center.x, -bv.minCorner.y, -bv.center.z - bv.radius);
+                        avatarRoot.getTransform().setPosition(-bv.center.x, 1 - bv.minCorner.y, -bv.center.z - bv.radius);
                         mContext.runOnTheFrameworkThread(new Runnable()
                         {
-                            public void run() {
+                            public void run()
+                            {
+                                String physicsFile = "female_caucasian_adult/FemaleBody.avt";
+
+                                try
+                                {
+                                    SXRPhysicsLoader.loadPhysicsFile(mScene, physicsFile);
+                                    SXRSkeleton skel = avatar.getSkeleton();
+                                    for (int i = 0; i < skel.getNumBones(); ++i)
+                                    {
+                                        skel.setBoneOptions(i, SXRSkeleton.BONE_PHYSICS);
+                                    }
+                                }
+                                catch (IOException ex)
+                                {
+                                    Log.e(TAG, "Problem loading physics file " + physicsFile + " " + ex.getMessage());
+                                }
                                 loadNextAnimation(avatar, mBoneMap);
                             }
                         });
@@ -69,6 +92,11 @@ public class AvatarMain extends SXRMain {
         @Override
         public void onAnimationLoaded(SXRAvatar avatar, SXRAnimator animation, String filePath, String errors)
         {
+            SXRAnimation anim = animation.getAnimation(0);
+            if (anim instanceof SXRSkeletonAnimation)
+            {
+                ((SXRSkeletonAnimation) anim).scaleKeys(0.01f);
+            }
             animation.setRepeatMode(SXRRepeatMode.ONCE);
             animation.setSpeed(1f);
             avatar.setBlend(1);
@@ -103,8 +131,10 @@ public class AvatarMain extends SXRMain {
         rig.setNearClippingDistance(0.1f);
         rig.setFarClippingDistance(50);
         mScene.addNode(makeEnvironment(ctx, mScene));
+        mScene.setFrustumCulling(false);
 
-        SXRAvatar avatar = new SXRAvatar(ctx, "YBot");
+//        SXRAvatar avatar = new SXRAvatar(ctx, "YBot");
+        SXRAvatar avatar = new SXRAvatar(ctx, "female_caucasian_adult");
         avatar.getEventReceiver().addListener(mAvatarListener);
         mBoneMap = readFile(mBoneMapPath);
         try
@@ -129,7 +159,7 @@ public class AvatarMain extends SXRMain {
         SXRMaterial floorMtl = new SXRMaterial(ctx, SXRMaterial.SXRShaderType.Phong.ID);
         SXRMaterial skyMtl = new SXRMaterial(ctx, SXRMaterial.SXRShaderType.Phong.ID);
         SXRNode skyBox = new SXRSphereNode(ctx, false, skyMtl);
-        SXRNode floor = new SXRNode(ctx, 10, 10);
+        SXRNode floor = new SXRNode(ctx, 20, 20);
 
         try
         {

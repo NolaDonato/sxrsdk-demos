@@ -22,3 +22,7 @@ android {
         jniLibs.srcDir 'libs' // pre-compiled libraries
     }
 }
+
+dependencies {
+    compile project(path: ':sxr-physics')
+}
