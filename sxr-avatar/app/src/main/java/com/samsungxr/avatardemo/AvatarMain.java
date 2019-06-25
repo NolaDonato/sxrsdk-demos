@@ -5,11 +5,13 @@ import android.util.Log;
 
 import com.samsungxr.SXRActivity;
 import com.samsungxr.SXRAndroidResource;
+import com.samsungxr.SXRBoxCollider;
 import com.samsungxr.SXRCameraRig;
 import com.samsungxr.SXRContext;
 import com.samsungxr.SXRDirectLight;
 import com.samsungxr.SXRMain;
 import com.samsungxr.SXRMaterial;
+import com.samsungxr.SXRMeshCollider;
 import com.samsungxr.SXRNode;
 import com.samsungxr.SXRScene;
 import com.samsungxr.SXRSpotLight;
@@ -22,6 +24,8 @@ import com.samsungxr.animation.SXRSkeleton;
 import com.samsungxr.animation.keyframe.SXRSkeletonAnimation;
 import com.samsungxr.nodes.SXRSphereNode;
 import com.samsungxr.physics.SXRPhysicsLoader;
+import com.samsungxr.physics.SXRRigidBody;
+import com.samsungxr.physics.SXRWorld;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -40,6 +44,8 @@ public class AvatarMain extends SXRMain
     private SXRActivity mActivity;
     private int mNumAnimsLoaded = 0;
     private String mBoneMap;
+    private SXRWorld mWorld;
+    private SXRNode mPhysicsRoot;
 
     public AvatarMain(SXRActivity activity) {
         mActivity = activity;
@@ -52,7 +58,7 @@ public class AvatarMain extends SXRMain
         {
             if (avatarRoot.getParent() == null)
             {
-                mScene.addNode(avatarRoot);
+                mPhysicsRoot.addChildObject(avatarRoot);
                 mContext.runOnGlThreadPostRender(1, new Runnable()
                 {
                     public void run()
@@ -61,6 +67,7 @@ public class AvatarMain extends SXRMain
                         float sf = 1.0f / bv.radius;
                         avatarRoot.getTransform().setScale(sf, sf, sf);
                         bv = avatarRoot.getBoundingVolume();
+//                        avatarRoot.getTransform().setPosition(-bv.center.x, 1 - bv.minCorner.y, -bv.center.z - bv.radius);
                         avatarRoot.getTransform().setPosition(-bv.center.x, 1 - bv.minCorner.y, -bv.center.z - bv.radius);
                         mContext.runOnTheFrameworkThread(new Runnable()
                         {
@@ -70,18 +77,21 @@ public class AvatarMain extends SXRMain
 
                                 try
                                 {
-                                    SXRPhysicsLoader.loadPhysicsFile(mScene, physicsFile);
                                     SXRSkeleton skel = avatar.getSkeleton();
+
+                                    skel.poseToBones();
+                                    SXRPhysicsLoader.loadPhysicsFile(mScene, physicsFile);
                                     for (int i = 0; i < skel.getNumBones(); ++i)
                                     {
                                         skel.setBoneOptions(i, SXRSkeleton.BONE_PHYSICS);
                                     }
+                                    mWorld.setEnable(true);
                                 }
                                 catch (IOException ex)
                                 {
                                     Log.e(TAG, "Problem loading physics file " + physicsFile + " " + ex.getMessage());
                                 }
-                                loadNextAnimation(avatar, mBoneMap);
+                                //loadNextAnimation(avatar, mBoneMap);
                             }
                         });
                     }
@@ -125,12 +135,13 @@ public class AvatarMain extends SXRMain
     {
         mContext = ctx;
         mScene = ctx.getMainScene();
-
+        mPhysicsRoot = new SXRNode(ctx);
         SXRCameraRig rig = mScene.getMainCameraRig();
         rig.getOwnerObject().getTransform().setPositionY(1.0f);
         rig.setNearClippingDistance(0.1f);
         rig.setFarClippingDistance(50);
-        mScene.addNode(makeEnvironment(ctx, mScene));
+        mScene.addNode(mPhysicsRoot);
+        mPhysicsRoot.addChildObject(makeEnvironment(ctx, mScene));
         mScene.setFrustumCulling(false);
 
 //        SXRAvatar avatar = new SXRAvatar(ctx, "YBot");
@@ -160,7 +171,10 @@ public class AvatarMain extends SXRMain
         SXRMaterial skyMtl = new SXRMaterial(ctx, SXRMaterial.SXRShaderType.Phong.ID);
         SXRNode skyBox = new SXRSphereNode(ctx, false, skyMtl);
         SXRNode floor = new SXRNode(ctx, 20, 20);
+        SXRBoxCollider floorCollider = new SXRBoxCollider(ctx);
+        SXRRigidBody floorBody = new SXRRigidBody(ctx);
 
+        floorBody.setSimulationType(SXRRigidBody.STATIC);
         try
         {
             SXRTexture  floorTex = ctx.getAssetLoader().loadTexture(new SXRAndroidResource(ctx, "checker.png"));
@@ -194,6 +208,11 @@ public class AvatarMain extends SXRMain
         env.addChildObject(topLight);
         env.addChildObject(skyBox);
         env.addChildObject(floor);
+
+        mWorld = new SXRWorld(mScene);
+        mWorld.setEnable(false);
+        floor.attachCollider(floorCollider);
+        floor.attachComponent(floorBody);
         return env;
     }
 
