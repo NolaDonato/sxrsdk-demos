@@ -22,3 +22,24 @@ android {
         jniLibs.srcDir 'libs' // pre-compiled libraries
     }
 }
+
+dependencies
+{
+    compile project(path: ':sxr-physics')
+    if(project.hasProperty("useLocalDependencies") && project.useLocalDependencies)
+    {
+        if (findProject(':sxr-physics'))
+        {
+            implementation project(':sxr-physics')
+        }
+        else
+        {
+            debugImplementation(name: 'sxr-physics-debug', ext: 'aar')
+            releaseImplementation(name: 'sxr-physics-release', ext: 'aar')
+        }
+    }
+    else
+    {
+        implementation "com.samsungxr:sxr-physics:$sxrVersion"
+    }
+}

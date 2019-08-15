@@ -5,6 +5,7 @@ import android.util.Log;
 
 import com.samsungxr.SXRActivity;
 import com.samsungxr.SXRAndroidResource;
+import com.samsungxr.SXRBoxCollider;
 import com.samsungxr.SXRCameraRig;
 import com.samsungxr.SXRContext;
 import com.samsungxr.SXRDirectLight;
@@ -18,21 +19,33 @@ import com.samsungxr.animation.SXRAnimation;
 import com.samsungxr.animation.SXRAnimator;
 import com.samsungxr.animation.SXRAvatar;
 import com.samsungxr.animation.SXRRepeatMode;
+import com.samsungxr.nodes.SXRCubeNode;
 import com.samsungxr.nodes.SXRSphereNode;
+import com.samsungxr.physics.SXRPhysicsLoader;
+import com.samsungxr.physics.SXRRigidBody;
+import com.samsungxr.physics.SXRWorld;
+
+import org.joml.Vector3f;
 
 import java.io.IOException;
 import java.io.InputStream;
 
 public class AvatarMain extends SXRMain {
-    private final String mModelPath = "YBot/ybot.fbx";
-    private final String[] mAnimationPaths =  { "YBot/Zombie_Stand_Up_mixamo.com.bvh", "YBot/Football_Hike_mixamo.com.bvh" };
-    private final String mBoneMapPath = "animation/mixamo/mixamo_map.txt";
+//    private final String mModelPath = "YBot/ybot.fbx";
+//    private final String[] mAnimationPaths =  { "YBot/Zombie_Stand_Up_mixamo.com.bvh", "YBot/Football_Hike_mixamo.com.bvh" };
+//    private final String mBoneMapPath = "animation/mixamo/mixamo_map.txt";
+    private final String mModelPath = "FemaleBody/FemaleBody.gltf";
+    private final String[] mAnimationPaths =  { };
+    private final String mBoneMapPath = "animations/DMbonemap.txt";
+    private final String mPhysicsPath = "FemaleBody/FemaleBody.avt";
+
     private static final String TAG = "AVATAR";
     private SXRContext mContext;
     private SXRScene mScene;
     private SXRActivity mActivity;
     private int mNumAnimsLoaded = 0;
     private String mBoneMap;
+    private SXRWorld mWorld;
 
     public AvatarMain(SXRActivity activity) {
         mActivity = activity;
@@ -45,27 +58,38 @@ public class AvatarMain extends SXRMain {
             if (avatarRoot.getParent() == null)
             {
                 mScene.addNode(avatarRoot);
-                loadNextAnimation(avatar, mBoneMap);
-                mContext.runOnGlThreadPostRender(1, new Runnable()
+                SXRNode.BoundingVolume bv = avatarRoot.getBoundingVolume();
+                float sf = 1.0f / bv.radius;
+                avatarRoot.getTransform().setScale(sf, sf, sf);
+
+                bv = avatarRoot.getBoundingVolume();
+                avatarRoot.getTransform().setPosition(-bv.center.x, -bv.minCorner.y, -bv.center.z - bv.radius);
+ /*
+                mContext.runOnTheFrameworkThread(new Runnable()
                 {
-                    public void run()
-                    {
-                        SXRNode.BoundingVolume bv = avatarRoot.getBoundingVolume();
-                        float sf = 1.0f / bv.radius;
-                        avatarRoot.getTransform().setScale(sf, sf, sf);
-                        bv = avatarRoot.getBoundingVolume();
-                        avatarRoot.getTransform().setPosition(-bv.center.x, -bv.minCorner.y, -bv.center.z - bv.radius);
-                        mContext.runOnTheFrameworkThread(new Runnable()
-                        {
-                            public void run() {
-                                loadNextAnimation(avatar, mBoneMap);
-                            }
-                        });
+                    public void run() {
+                        loadNextAnimation(avatar, mBoneMap);
                     }
                 });
+*/
+                loadPhysics(mPhysicsPath);
+                mWorld.setEnable(true);
             }
         }
 
+        public void loadPhysics(String physicsFile)
+        {
+            try
+            {
+                SXRAndroidResource res = new SXRAndroidResource(mContext, physicsFile);
+                SXRPhysicsLoader.loadPhysicsFile(res, mScene.getRoot(), false);
+            }
+            catch (IOException ex)
+            {
+                ex.printStackTrace();
+                mContext.getActivity().finish();
+            }
+        }
         @Override
         public void onAnimationLoaded(SXRAvatar avatar, SXRAnimator animation, String filePath, String errors)
         {
@@ -97,14 +121,15 @@ public class AvatarMain extends SXRMain {
     {
         mContext = ctx;
         mScene = ctx.getMainScene();
-
+//        mWorld = new SXRWorld(mScene, true);
+        mWorld = new SXRWorld(mScene);
         SXRCameraRig rig = mScene.getMainCameraRig();
         rig.getOwnerObject().getTransform().setPositionY(1.0f);
         rig.setNearClippingDistance(0.1f);
         rig.setFarClippingDistance(50);
         mScene.addNode(makeEnvironment(ctx, mScene));
 
-        SXRAvatar avatar = new SXRAvatar(ctx, "YBot");
+        SXRAvatar avatar = new SXRAvatar(ctx, "FemaleBody");
         avatar.getEventReceiver().addListener(mAvatarListener);
         mBoneMap = readFile(mBoneMapPath);
         try
@@ -129,7 +154,9 @@ public class AvatarMain extends SXRMain {
         SXRMaterial floorMtl = new SXRMaterial(ctx, SXRMaterial.SXRShaderType.Phong.ID);
         SXRMaterial skyMtl = new SXRMaterial(ctx, SXRMaterial.SXRShaderType.Phong.ID);
         SXRNode skyBox = new SXRSphereNode(ctx, false, skyMtl);
-        SXRNode floor = new SXRNode(ctx, 10, 10);
+        SXRCubeNode floor = new SXRCubeNode(ctx, true, new Vector3f(50, 10, 50));
+        SXRRigidBody floorBody = new SXRRigidBody(ctx, 50);
+        SXRBoxCollider floorCollider = new SXRBoxCollider(ctx);
 
         try
         {
@@ -147,7 +174,9 @@ public class AvatarMain extends SXRMain {
         floorMtl.setDiffuseColor(0.7f, 0.6f, 0.5f, 1);
         floorMtl.setSpecularColor(1, 1, 0.8f, 1);
         floorMtl.setSpecularExponent(4.0f);
-        floor.getTransform().rotateByAxis(-90, 1, 0, 0);
+        floor.getTransform().setPositionY(-5);
+        floor.attachComponent(floorCollider);
+        floor.attachComponent(floorBody);
         floor.getRenderData().setCastShadows(false);
         skyBox.getRenderData().setCastShadows(false);
         skyBox.getTransform().setScale(20,  20, 20);

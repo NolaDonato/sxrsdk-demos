@@ -136,7 +136,7 @@ public class MainScript extends SXRMain implements SXRNode.ComponentVisitor {
         initScene(sxrContext, mScene);
         initLabels(sxrContext, mScene);
 
-        addPhysicsWorld(sxrContext, mScene);
+        addPhysicsWorld(mScene);
 
         mScene.getEventReceiver().addListener(this);
         sxrContext.getInputManager().selectController(mControllerSelector);
@@ -174,8 +174,8 @@ public class MainScript extends SXRMain implements SXRNode.ComponentVisitor {
         addTimer(context, scene);
     }
 
-    private static void addPhysicsWorld(SXRContext context, SXRScene scene) {
-        scene.getRoot().attachComponent(new SXRWorld(context, MainHelper.collisionMatrix));
+    private static void addPhysicsWorld(SXRScene scene) {
+        scene.getRoot().attachComponent(new SXRWorld(scene, MainHelper.collisionMatrix));
     }
 
     private static void addLights(SXRContext context, SXRScene scene) {
