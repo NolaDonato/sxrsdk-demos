@@ -7,10 +7,12 @@ import com.samsungxr.SXRActivity;
 import com.samsungxr.SXRAndroidResource;
 import com.samsungxr.SXRBoxCollider;
 import com.samsungxr.SXRCameraRig;
+import com.samsungxr.SXRComponent;
 import com.samsungxr.SXRContext;
 import com.samsungxr.SXRDirectLight;
 import com.samsungxr.SXRMain;
 import com.samsungxr.SXRMaterial;
+import com.samsungxr.SXRMeshCollider;
 import com.samsungxr.SXRNode;
 import com.samsungxr.SXRScene;
 import com.samsungxr.SXRSpotLight;
@@ -19,8 +21,10 @@ import com.samsungxr.animation.SXRAnimation;
 import com.samsungxr.animation.SXRAnimator;
 import com.samsungxr.animation.SXRAvatar;
 import com.samsungxr.animation.SXRRepeatMode;
+import com.samsungxr.animation.SXRSkeleton;
 import com.samsungxr.nodes.SXRCubeNode;
 import com.samsungxr.nodes.SXRSphereNode;
+import com.samsungxr.physics.SXRPhysicsJoint;
 import com.samsungxr.physics.SXRPhysicsLoader;
 import com.samsungxr.physics.SXRRigidBody;
 import com.samsungxr.physics.SXRWorld;
@@ -29,6 +33,7 @@ import org.joml.Vector3f;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.List;
 
 public class AvatarMain extends SXRMain {
 //    private final String mModelPath = "YBot/ybot.fbx";
@@ -46,6 +51,7 @@ public class AvatarMain extends SXRMain {
     private int mNumAnimsLoaded = 0;
     private String mBoneMap;
     private SXRWorld mWorld;
+    private SXRAvatar mAvatar = null;
 
     public AvatarMain(SXRActivity activity) {
         mActivity = activity;
@@ -55,6 +61,7 @@ public class AvatarMain extends SXRMain {
         @Override
         public void onAvatarLoaded(final SXRAvatar avatar, final SXRNode avatarRoot, String filePath, String errors)
         {
+            mAvatar = avatar;
             if (avatarRoot.getParent() == null)
             {
                 mScene.addNode(avatarRoot);
@@ -64,32 +71,17 @@ public class AvatarMain extends SXRMain {
 
                 bv = avatarRoot.getBoundingVolume();
                 avatarRoot.getTransform().setPosition(-bv.center.x, -bv.minCorner.y, -bv.center.z - bv.radius);
- /*
                 mContext.runOnTheFrameworkThread(new Runnable()
                 {
                     public void run() {
-                        loadNextAnimation(avatar, mBoneMap);
+//                        loadNextAnimation(avatar, mBoneMap);
+                        loadPhysics(mPhysicsPath);
                     }
                 });
-*/
-                loadPhysics(mPhysicsPath);
-                mWorld.setEnable(true);
             }
         }
 
-        public void loadPhysics(String physicsFile)
-        {
-            try
-            {
-                SXRAndroidResource res = new SXRAndroidResource(mContext, physicsFile);
-                SXRPhysicsLoader.loadPhysicsFile(res, mScene.getRoot(), false);
-            }
-            catch (IOException ex)
-            {
-                ex.printStackTrace();
-                mContext.getActivity().finish();
-            }
-        }
+
         @Override
         public void onAnimationLoaded(SXRAvatar avatar, SXRAnimator animation, String filePath, String errors)
         {
@@ -121,9 +113,9 @@ public class AvatarMain extends SXRMain {
     {
         mContext = ctx;
         mScene = ctx.getMainScene();
-//        mWorld = new SXRWorld(mScene, true);
-        mWorld = new SXRWorld(mScene);
+        mWorld = new SXRWorld(mScene, false);
         SXRCameraRig rig = mScene.getMainCameraRig();
+
         rig.getOwnerObject().getTransform().setPositionY(1.0f);
         rig.setNearClippingDistance(0.1f);
         rig.setFarClippingDistance(50);
@@ -132,11 +124,13 @@ public class AvatarMain extends SXRMain {
         SXRAvatar avatar = new SXRAvatar(ctx, "FemaleBody");
         avatar.getEventReceiver().addListener(mAvatarListener);
         mBoneMap = readFile(mBoneMapPath);
+
         try
         {
             avatar.loadModel(new SXRAndroidResource(ctx, mModelPath));
         }
-        catch (IOException e) {
+        catch (IOException e)
+        {
             e.printStackTrace();
             mActivity.finish();
             mActivity = null;
@@ -154,9 +148,9 @@ public class AvatarMain extends SXRMain {
         SXRMaterial floorMtl = new SXRMaterial(ctx, SXRMaterial.SXRShaderType.Phong.ID);
         SXRMaterial skyMtl = new SXRMaterial(ctx, SXRMaterial.SXRShaderType.Phong.ID);
         SXRNode skyBox = new SXRSphereNode(ctx, false, skyMtl);
-        SXRCubeNode floor = new SXRCubeNode(ctx, true, new Vector3f(50, 10, 50));
+        SXRCubeNode floor = new SXRCubeNode(ctx, true, new Vector3f(20, 10, 20));
         SXRRigidBody floorBody = new SXRRigidBody(ctx, 50);
-        SXRBoxCollider floorCollider = new SXRBoxCollider(ctx);
+        SXRMeshCollider floorCollider = new SXRMeshCollider(ctx, true);
 
         try
         {
@@ -174,7 +168,7 @@ public class AvatarMain extends SXRMain {
         floorMtl.setDiffuseColor(0.7f, 0.6f, 0.5f, 1);
         floorMtl.setSpecularColor(1, 1, 0.8f, 1);
         floorMtl.setSpecularExponent(4.0f);
-        floor.getTransform().setPositionY(-5);
+        floor.getTransform().setPositionY(-8);
         floor.attachComponent(floorCollider);
         floor.attachComponent(floorBody);
         floor.getRenderData().setCastShadows(false);
@@ -185,15 +179,59 @@ public class AvatarMain extends SXRMain {
         skyMtl.setSpecularColor(0, 0, 0, 1);
         skyMtl.setSpecularExponent(0);
         rig.getHeadTransformObject().attachComponent(headLight);
-        headLight.setShadowRange(0.1f, 20);
+        rig.getTransform().setPositionZ(2);
+        //headLight.setShadowRange(0.1f, 20);
         topLightObj.attachComponent(topLight);
         topLightObj.getTransform().rotateByAxis(-90, 1, 0, 0);
         topLightObj.getTransform().setPosition(0, 2, -1);
-        topLight.setShadowRange(0.1f, 50);
+        //topLight.setShadowRange(0.1f, 50);
         env.addChildObject(topLight);
         env.addChildObject(skyBox);
         env.addChildObject(floor);
         return env;
+    }
+
+    public void loadPhysics(String physicsFile)
+    {
+        try
+        {
+            SXRAndroidResource res = new SXRAndroidResource(mContext, physicsFile);
+            SXRNode root = SXRPhysicsLoader.loadPhysicsFile(res, mScene.getRoot(), false);
+            mAvatar.getSkeleton().poseFromBones();
+            mWorld.setEnable(true);
+        }
+        catch (IOException ex)
+        {
+            ex.printStackTrace();
+            mContext.getActivity().finish();
+        }
+    }
+
+    public void loadPhysics(String physicsFile, SXRSkeleton avatarSkel)
+    {
+        try
+        {
+            SXRAndroidResource res = new SXRAndroidResource(mContext, physicsFile);
+            SXRNode root = SXRPhysicsLoader.loadPhysicsFile(res, mScene.getRoot(), false);
+            mWorld.setEnable(true);
+            List<SXRComponent> components = root.getAllComponents(SXRPhysicsJoint.getComponentType());
+            if (!components.isEmpty())
+            {
+                for (SXRComponent c : components)
+                {
+                    SXRPhysicsJoint j = (SXRPhysicsJoint) c;
+                    if (j.getBoneID() == 0)
+                    {
+                        j.mapPoseToSkeleton(avatarSkel, 100000);
+                    }
+                }
+            }
+        }
+        catch (IOException ex)
+        {
+            ex.printStackTrace();
+            mContext.getActivity().finish();
+        }
     }
 
     private void loadNextAnimation(SXRAvatar avatar, String bonemap)
@@ -217,16 +255,30 @@ public class AvatarMain extends SXRMain {
         }
     }
 
-    private String readFile(String filePath) {
-        try {
+    private String readFile(String filePath)
+    {
+        try
+        {
             SXRAndroidResource res = new SXRAndroidResource(getSXRContext(), filePath);
             InputStream stream = res.getStream();
             byte[] bytes = new byte[stream.available()];
             stream.read(bytes);
             String s = new String(bytes);
             return s;
-        } catch (IOException ex) {
+        }
+        catch (IOException ex)
+        {
             return null;
         }
     }
-}
+
+    public void onStep()
+    {
+        if (mAvatar != null)
+        {
+            mAvatar.getSkeleton().poseFromBones();
+        }
+
+    }
+
+    }
