@@ -48,6 +48,7 @@ public class MainScript extends SXRMain implements SXRNode.ComponentVisitor {
     private SXRNode mCursor;
     private SXRNode mBallProto;
     private SXRNode mCurrentBall = null;
+    private SXRWorld mWorld = null;
 
 
     private SXRCursorController.IControllerEvent mControllerThrowHandler = new SXRCursorController.IControllerEvent()
@@ -125,21 +126,20 @@ public class MainScript extends SXRMain implements SXRNode.ComponentVisitor {
     };
 
     @Override
-    public void onInit(SXRContext sxrContext) throws Throwable {
+    public void onInit(SXRContext sxrContext)
+    {
         mScene = sxrContext.getMainScene();
         mCamera = mScene.getMainCameraRig();
         mCamera.getTransform().setPosition(0.0f, 6.0f, 20f);
 
         mCursor = MainHelper.createGaze(sxrContext, 0.0f, 0.0f, 0.0f);
         mBallProto = new SXRSphereNode(sxrContext, true, new SXRMaterial(sxrContext, SXRMaterial.SXRShaderType.Phong.ID));
-
         initScene(sxrContext, mScene);
         initLabels(sxrContext, mScene);
-
-        addPhysicsWorld(mScene);
-
+        mWorld = new SXRWorld(sxrContext, MainHelper.collisionMatrix);
         mScene.getEventReceiver().addListener(this);
         sxrContext.getInputManager().selectController(mControllerSelector);
+        mWorld.setEnable(true);
     }
 
     private void initScene(SXRContext context, SXRScene scene) {
@@ -172,10 +172,6 @@ public class MainScript extends SXRMain implements SXRNode.ComponentVisitor {
         scene.addNode(mBallsLabel);
 
         addTimer(context, scene);
-    }
-
-    private static void addPhysicsWorld(SXRScene scene) {
-        scene.getRoot().attachComponent(new SXRWorld(scene, MainHelper.collisionMatrix));
     }
 
     private static void addLights(SXRContext context, SXRScene scene) {

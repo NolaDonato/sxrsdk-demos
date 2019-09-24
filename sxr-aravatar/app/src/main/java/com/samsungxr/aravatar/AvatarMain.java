@@ -95,7 +95,7 @@ public class AvatarMain extends SXRMain {
         mAvatarAnchor = new SXRNode(mContext);
         mAvatarAnchor.setName("Avatar_Anchor");
         mAvManager.loadModel();
-        mMixedReality = new SXRMixedReality(mScene, false);
+        mMixedReality = new SXRMixedReality(mScene, false, "ar-drop-in2");
         mMixedReality.getEventReceiver().addListener(planeEventsListener);
         mMixedReality.getEventReceiver().addListener(anchorEventsListener);
         mMixedReality.getEventReceiver().addListener(mrEventsListener);
