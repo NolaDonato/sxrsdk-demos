@@ -13,8 +13,8 @@ import com.samsungxr.SXRContext;
 import com.samsungxr.SXRDirectLight;
 import com.samsungxr.SXRMain;
 import com.samsungxr.SXRMaterial;
-import com.samsungxr.SXRMeshCollider;
 import com.samsungxr.SXRNode;
+import com.samsungxr.SXRRenderData;
 import com.samsungxr.SXRScene;
 import com.samsungxr.SXRSpotLight;
 import com.samsungxr.SXRTexture;
@@ -27,6 +27,7 @@ import com.samsungxr.animation.SXRSkeleton;
 import com.samsungxr.animation.keyframe.SXRSkeletonAnimation;
 import com.samsungxr.nodes.SXRCubeNode;
 import com.samsungxr.nodes.SXRSphereNode;
+import com.samsungxr.physics.SXRCollisionMatrix;
 import com.samsungxr.physics.SXRPhysicsJoint;
 import com.samsungxr.physics.SXRPhysicsLoader;
 import com.samsungxr.physics.SXRRigidBody;
@@ -71,7 +72,7 @@ public class AvatarMain extends SXRMain
             {
                 mPhysicsRoot.addChildObject(avatarRoot);
 //                loadPhysics("female_caucasian_adult/FemaleBody.avt", avatar.getSkeleton());
-                loadPhysics("TestNoArms.avt", avatar.getSkeleton());
+                loadPhysics("TestNoLimbs.avt", avatar.getSkeleton());
                 //loadNextAnimation(avatar, mBoneMap);
             }
         }
@@ -115,10 +116,9 @@ public class AvatarMain extends SXRMain
         mScene = ctx.getMainScene();
         mPhysicsRoot = new SXRNode(ctx);
         SXRCameraRig rig = mScene.getMainCameraRig();
-        rig.getOwnerObject().getTransform().setPositionY(1.0f);
+        rig.getOwnerObject().getTransform().setPosition(0, 0.8fx, 0.5f);
         rig.setNearClippingDistance(0.1f);
         rig.setFarClippingDistance(50);
-        rig.getTransform().setPositionZ(1);
         mScene.addNode(mPhysicsRoot);
         makeEnvironment(ctx, mScene);
         mScene.setFrustumCulling(false);
@@ -163,7 +163,7 @@ public class AvatarMain extends SXRMain
         SXRNode skyBox = new SXRSphereNode(ctx, false, skyMtl);
         SXRNode floor = new SXRCubeNode(ctx, true, new Vector3f(30, 10, 30));
         SXRBoxCollider floorCollider = new SXRBoxCollider(ctx);
-        SXRRigidBody floorBody = new SXRRigidBody(ctx);
+        SXRRigidBody floorBody = new SXRRigidBody(ctx, 0, 2);
 
         floorBody.setSimulationType(SXRRigidBody.STATIC);
         floorBody.setRestitution(0.5f);
@@ -172,7 +172,6 @@ public class AvatarMain extends SXRMain
         {
             SXRTexture  floorTex = ctx.getAssetLoader().loadTexture(new SXRAndroidResource(ctx, "checker.png"));
             floorMtl.setMainTexture(floorTex);
-            floor.getRenderData().setMaterial(floorMtl);
         }
         catch (IOException ex)
         {
@@ -184,6 +183,7 @@ public class AvatarMain extends SXRMain
         floorMtl.setDiffuseColor(0.7f, 0.6f, 0.5f, 1);
         floorMtl.setSpecularColor(1, 1, 0.8f, 1);
         floorMtl.setSpecularExponent(4.0f);
+        floor.getRenderData().setMaterial(floorMtl);
         floor.getTransform().setPositionY(-5);
         floor.getRenderData().setCastShadows(false);
         skyBox.getRenderData().setCastShadows(false);
@@ -203,7 +203,12 @@ public class AvatarMain extends SXRMain
         env.addChildObject(floor);
         mPhysicsRoot.addChildObject(env);
 
-        mWorld = new SXRWorld(mScene, false);
+        SXRCollisionMatrix cm = new SXRCollisionMatrix();
+        cm.enableCollision(0, 1);
+        cm.enableCollision(0, 2);
+        cm.enableCollision(1, 0);
+        cm.enableCollision(1, 2);
+        mWorld = new SXRWorld(mScene, cm, false);
         floor.attachCollider(floorCollider);
         floor.attachComponent(floorBody);
         return env;
@@ -327,6 +332,8 @@ public class AvatarMain extends SXRMain
     public void onSingleTapUp(MotionEvent event)
     {
         SXRNode debugDraw = mWorld.setupDebugDraw();
+
+//        debugDraw.getTransform().setPositionZ(1.5f);
         mScene.addNode(debugDraw);
         mWorld.setDebugMode(-1);
         mWorld.setEnable(true);

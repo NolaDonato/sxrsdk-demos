@@ -553,7 +553,7 @@
                                     "springDamping": 0.0,
                                     "springStiffness": 0.0,
                                     "useAutomaticPositionLockThreshold": false,
-                                    "useLimit": false,
+                                    "useLimit": true,
                                     "useMotor": false
                                 },
                                 {
@@ -571,7 +571,7 @@
                                     "springDamping": 0.0,
                                     "springStiffness": 0.0,
                                     "useAutomaticPositionLockThreshold": false,
-                                    "useLimit": false,
+                                    "useLimit": true,
                                     "useMotor": false
                                 },
                                 {
@@ -589,7 +589,7 @@
                                     "springDamping": 0.0,
                                     "springStiffness": 0.0,
                                     "useAutomaticPositionLockThreshold": false,
-                                    "useLimit": false,
+                                    "useLimit": true,
                                     "useMotor": false
                                 }
                             ],
@@ -770,7 +770,7 @@
                                     "springDamping": 0.0,
                                     "springStiffness": 0.0,
                                     "useAutomaticPositionLockThreshold": false,
-                                    "useLimit": false,
+                                    "useLimit": true,
                                     "useMotor": false
                                 },
                                 {
@@ -788,7 +788,7 @@
                                     "springDamping": 0.0,
                                     "springStiffness": 0.0,
                                     "useAutomaticPositionLockThreshold": true,
-                                    "useLimit": false,
+                                    "useLimit": true,
                                     "useMotor": false
                                 },
                                 {
@@ -806,7 +806,7 @@
                                     "springDamping": 0.0,
                                     "springStiffness": 0.0,
                                     "useAutomaticPositionLockThreshold": false,
-                                    "useLimit": false,
+                                    "useLimit": true,
                                     "useMotor": false
                                 }
                             ],
@@ -1143,8 +1143,8 @@
                                     "desiredPosition": 0.0,
                                     "desiredVelocity": 0.0,
                                     "isPositionMotor": false,
-                                    "limitHigh": 0.0,
-                                    "limitLow": 0.0,
+                                    "limitHigh": 90.0,
+                                    "limitLow": -90.0,
                                     "maxLimitForce": 0.0,
                                     "maxMotorForce": 0.0,
                                     "neutralPoint": 0.0,
@@ -1152,7 +1152,7 @@
                                     "springDamping": 0.0,
                                     "springStiffness": 0.0,
                                     "useAutomaticPositionLockThreshold": false,
-                                    "useLimit": false,
+                                    "useLimit": true,
                                     "useMotor": false
                                 },
                                 {
@@ -1161,8 +1161,8 @@
                                     "desiredPosition": 0.0,
                                     "desiredVelocity": 0.0,
                                     "isPositionMotor": false,
-                                    "limitHigh": 0.0,
-                                    "limitLow": 0.0,
+                                    "limitHigh": 90.0,
+                                    "limitLow": -90.0,
                                     "maxLimitForce": 0.0,
                                     "maxMotorForce": 0.0,
                                     "neutralPoint": 0.0,
@@ -1170,7 +1170,7 @@
                                     "springDamping": 0.0,
                                     "springStiffness": 0.0,
                                     "useAutomaticPositionLockThreshold": false,
-                                    "useLimit": false,
+                                    "useLimit": true,
                                     "useMotor": false
                                 },
                                 {
@@ -1179,8 +1179,8 @@
                                     "desiredPosition": 0.0,
                                     "desiredVelocity": 0.0,
                                     "isPositionMotor": false,
-                                    "limitHigh": 0.0,
-                                    "limitLow": 0.0,
+                                    "limitHigh": 90.0,
+                                    "limitLow": -90.0,
                                     "maxLimitForce": 0.0,
                                     "maxMotorForce": 0.0,
                                     "neutralPoint": 0.0,
@@ -1188,7 +1188,7 @@
                                     "springDamping": 0.0,
                                     "springStiffness": 0.0,
                                     "useAutomaticPositionLockThreshold": false,
-                                    "useLimit": false,
+                                    "useLimit": true,
                                     "useMotor": false
                                 }
                             ],
@@ -1369,7 +1369,7 @@
                                     "springDamping": 0.0,
                                     "springStiffness": 0.0,
                                     "useAutomaticPositionLockThreshold": false,
-                                    "useLimit": false,
+                                    "useLimit": true,
                                     "useMotor": false
                                 },
                                 {
@@ -1387,7 +1387,7 @@
                                     "springDamping": 0.0,
                                     "springStiffness": 0.0,
                                     "useAutomaticPositionLockThreshold": false,
-                                    "useLimit": false,
+                                    "useLimit": true,
                                     "useMotor": false
                                 },
                                 {
@@ -1405,7 +1405,7 @@
                                     "springDamping": 0.0,
                                     "springStiffness": 0.0,
                                     "useAutomaticPositionLockThreshold": false,
-                                    "useLimit": false,
+                                    "useLimit": true,
                                     "useMotor": false
                                 }
                             ],
