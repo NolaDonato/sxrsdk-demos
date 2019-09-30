@@ -55,6 +55,7 @@ public class AvatarMain extends SXRMain
     private String mBoneMap;
     private SXRWorld mWorld;
     private SXRNode mPhysicsRoot;
+    private SXRSkeleton mAvatarSkel = null;
 
     public AvatarMain(SXRActivity activity) {
         mActivity = activity;
@@ -68,14 +69,10 @@ public class AvatarMain extends SXRMain
             if (avatarRoot.getParent() == null)
             {
                 mPhysicsRoot.addChildObject(avatarRoot);
-                SXRNode.BoundingVolume bv = avatarRoot.getBoundingVolume();
-                float sf = 1.0f / bv.radius;
-                avatarRoot.getTransform().setScale(sf, sf, sf);
-                bv = avatarRoot.getBoundingVolume();
-                //                        avatarRoot.getTransform().setPosition(-bv.center.x, 1 - bv.minCorner.y, -bv.center.z - bv.radius);
-                avatarRoot.getTransform().setPosition(-bv.center.x, 1 - bv.minCorner.y, -bv.center.z - bv.radius);
-//                loadPhysics("female_caucasian_adult/FemaleBody.avt", avatar.getSkeleton());
-                loadPhysics("TestNoArms.avt", avatar.getSkeleton());
+                mAvatarSkel = avatar.getSkeleton();
+                mAvatarSkel.poseToBones();
+//                loadPhysics("female_caucasian_adult/FemaleBody.avt", mAvatarSkel);
+                loadPhysics("Test.avt", mAvatarSkel);
                 //loadNextAnimation(avatar, mBoneMap);
             }
         }
@@ -118,10 +115,9 @@ public class AvatarMain extends SXRMain
         mScene = ctx.getMainScene();
         mPhysicsRoot = new SXRNode(ctx);
         SXRCameraRig rig = mScene.getMainCameraRig();
-        rig.getOwnerObject().getTransform().setPositionY(1.0f);
         rig.setNearClippingDistance(0.1f);
         rig.setFarClippingDistance(50);
-        rig.getTransform().setPositionZ(1);
+        rig.getTransform().setPosition(0, 0.8f, 1.5f);
         mScene.addNode(mPhysicsRoot);
         makeEnvironment(ctx, mScene);
         mScene.setFrustumCulling(false);
@@ -132,12 +128,10 @@ public class AvatarMain extends SXRMain
     public void onAfterInit()
     {
         loadAvatar("female_caucasian_adult");
-        //loadPhysics("Test.avt", null);
     }
 
     private void loadAvatar(String avatarFile)
     {
-//        SXRAvatar avatar = new SXRAvatar(ctx, "YBot");
         SXRAvatar avatar = new SXRAvatar(mContext, avatarFile);
         avatar.getEventReceiver().addListener(mAvatarListener);
         mBoneMap = readFile(mBoneMapPath);
@@ -253,56 +247,6 @@ public class AvatarMain extends SXRMain
                     }
                 }
             }
-            else
-            {
-                List<SXRComponent> components = mScene.getRoot().getAllComponents(SXRRigidBody.getComponentType());
-
-                for (SXRComponent c : components)
-                {
-                    SXRRigidBody body = (SXRRigidBody) c;
-                    SXRNode owner = body.getOwnerObject();
-
-                    if (owner.getRenderData() == null)
-                    {
-                        continue;
-                    }
-                    String name = owner.getName();
-                    SXRTransform t = owner.getTransform();
-                    Matrix4f m = t.getModelMatrix4f();
-                    Vector3f p = new Vector3f();
-                    m.getTranslation(p);
-                    float red = 0;
-                    float green = Math.abs(p.y / 5.0f);
-                    float blue = 0;
-
-                    if (p.x > 0)
-                    {
-                        blue = 8.0f * p.x;
-                    }
-                    else if (p.x < 0)
-                    {
-                        red = 8.0f * Math.abs(p.x);
-                    }
-                    if (name.contains("head"))
-                    {
-                        green = 0;
-                        red = blue = 0.5f;
-                    }
-                    if (name.contains("neck"))
-                    {
-                        green = 0.8f;
-                        red = blue = 0.5f;
-                    }
-
-                    SXRMaterial mtl = new SXRMaterial(mContext, SXRMaterial.SXRShaderType.Phong.ID);
-
-                    mtl.setDiffuseColor(red, green, blue, 1);
-                    if (body.getMass() > 0)
-                    {
-                        owner.getRenderData().setMaterial(mtl);
-                    }
-                }
-            }
         }
         catch (IOException ex)
         {
@@ -313,12 +257,20 @@ public class AvatarMain extends SXRMain
     @Override
     public void onSingleTapUp(MotionEvent event)
     {
-        SXRNode debugDraw = mWorld.setupDebugDraw();
-        mScene.addNode(debugDraw);
-        mWorld.setDebugMode(-1);
+        //SXRNode debugDraw = mWorld.setupDebugDraw();
+        //mScene.addNode(debugDraw);
+        //mWorld.setDebugMode(-1);
         mWorld.setEnable(true);
     }
 
+    @Override
+    public void onStep()
+    {
+        if (mAvatarSkel != null)
+        {
+            mAvatarSkel.poseFromBones();
+        }
+    }
 
     private String readFile(String filePath)
     {
