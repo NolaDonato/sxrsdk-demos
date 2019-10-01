@@ -27,6 +27,7 @@ import com.samsungxr.animation.SXRSkeleton;
 import com.samsungxr.animation.keyframe.SXRSkeletonAnimation;
 import com.samsungxr.nodes.SXRCubeNode;
 import com.samsungxr.nodes.SXRSphereNode;
+import com.samsungxr.physics.SXRPhysicsContent;
 import com.samsungxr.physics.SXRPhysicsJoint;
 import com.samsungxr.physics.SXRPhysicsLoader;
 import com.samsungxr.physics.SXRRigidBody;
@@ -199,7 +200,7 @@ public class AvatarMain extends SXRMain
         env.addChildObject(floor);
         mPhysicsRoot.addChildObject(env);
 
-        mWorld = new SXRWorld(mScene, false);
+        mWorld = new SXRWorld(mScene, true);
         mWorld.setGravity(0, -9.81f, 0);
         floor.attachCollider(floorCollider);
         floor.attachComponent(floorBody);
@@ -231,19 +232,25 @@ public class AvatarMain extends SXRMain
     {
         try
         {
-            SXRNode physicsRoot = SXRPhysicsLoader.loadPhysicsFile(mScene, physicsFile);
-
-            if ((physicsRoot != null) && (avatarSkel != null))
+            SXRAndroidResource res = new SXRAndroidResource(mContext, physicsFile);
+            SXRPhysicsContent importedWorld = SXRPhysicsLoader.loadAVTFile(mContext, res, mWorld.isMultiBody());
+            if (importedWorld != null)
             {
-                List<SXRComponent> components = physicsRoot.getAllComponents(SXRPhysicsJoint.getComponentType());
+                SXRNode physicsRoot = importedWorld.getOwnerObject();
 
-                for (SXRComponent c : components)
+                mWorld.merge(importedWorld);
+                if ((physicsRoot != null) && (avatarSkel != null))
                 {
-                    SXRPhysicsJoint rootJoint = (SXRPhysicsJoint) c;
-                    if (rootJoint.getBoneID() == 0)
+                    List<SXRComponent> components = physicsRoot.getAllComponents(SXRPhysicsJoint.getComponentType());
+
+                    for (SXRComponent c : components)
                     {
-                        rootJoint.getSkeleton();
-//                        rootJoint.mapPoseToSkeleton(avatarSkel, 10000);
+                        SXRPhysicsJoint rootJoint = (SXRPhysicsJoint) c;
+                        if (rootJoint.getBoneID() == 0)
+                        {
+                            rootJoint.getSkeleton();
+                            rootJoint.mapPoseToSkeleton(avatarSkel, 10000);
+                        }
                     }
                 }
             }
@@ -257,9 +264,12 @@ public class AvatarMain extends SXRMain
     @Override
     public void onSingleTapUp(MotionEvent event)
     {
-        //SXRNode debugDraw = mWorld.setupDebugDraw();
-        //mScene.addNode(debugDraw);
-        //mWorld.setDebugMode(-1);
+        if (!mWorld.isMultiBody())
+        {
+            SXRNode debugDraw = mWorld.setupDebugDraw();
+            mScene.addNode(debugDraw);
+            mWorld.setDebugMode(-1);
+        }
         mWorld.setEnable(true);
     }
 
