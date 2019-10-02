@@ -13,8 +13,8 @@ import com.samsungxr.SXRContext;
 import com.samsungxr.SXRDirectLight;
 import com.samsungxr.SXRMain;
 import com.samsungxr.SXRMaterial;
-import com.samsungxr.SXRMeshCollider;
 import com.samsungxr.SXRNode;
+import com.samsungxr.SXRRenderData;
 import com.samsungxr.SXRScene;
 import com.samsungxr.SXRSpotLight;
 import com.samsungxr.SXRTexture;
@@ -24,9 +24,11 @@ import com.samsungxr.animation.SXRAnimator;
 import com.samsungxr.animation.SXRAvatar;
 import com.samsungxr.animation.SXRRepeatMode;
 import com.samsungxr.animation.SXRSkeleton;
+import com.samsungxr.animation.SXRPoseMapper;
 import com.samsungxr.animation.keyframe.SXRSkeletonAnimation;
 import com.samsungxr.nodes.SXRCubeNode;
 import com.samsungxr.nodes.SXRSphereNode;
+import com.samsungxr.physics.SXRCollisionMatrix;
 import com.samsungxr.physics.SXRPhysicsContent;
 import com.samsungxr.physics.SXRPhysicsJoint;
 import com.samsungxr.physics.SXRPhysicsLoader;
@@ -56,7 +58,9 @@ public class AvatarMain extends SXRMain
     private String mBoneMap;
     private SXRWorld mWorld;
     private SXRNode mPhysicsRoot;
+    private SXRAvatar mAvatar;
     private SXRSkeleton mAvatarSkel = null;
+    private SXRPoseMapper mPhysicsToAvatar = null;
 
     public AvatarMain(SXRActivity activity) {
         mActivity = activity;
@@ -67,6 +71,7 @@ public class AvatarMain extends SXRMain
         @Override
         public void onAvatarLoaded(final SXRAvatar avatar, final SXRNode avatarRoot, String filePath, String errors)
         {
+            mAvatar = avatar;
             if (avatarRoot.getParent() == null)
             {
                 mPhysicsRoot.addChildObject(avatarRoot);
@@ -77,6 +82,7 @@ public class AvatarMain extends SXRMain
                 //loadNextAnimation(avatar, mBoneMap);
             }
         }
+
 
         @Override
         public void onAnimationLoaded(SXRAvatar avatar, SXRAnimator animation, String filePath, String errors)
@@ -136,6 +142,7 @@ public class AvatarMain extends SXRMain
         SXRAvatar avatar = new SXRAvatar(mContext, avatarFile);
         avatar.getEventReceiver().addListener(mAvatarListener);
         mBoneMap = readFile(mBoneMapPath);
+
         try
         {
             avatar.loadModel(new SXRAndroidResource(mContext, mModelPath));
@@ -160,7 +167,7 @@ public class AvatarMain extends SXRMain
         SXRNode skyBox = new SXRSphereNode(ctx, false, skyMtl);
         SXRNode floor = new SXRCubeNode(ctx, true, new Vector3f(30, 10, 30));
         SXRBoxCollider floorCollider = new SXRBoxCollider(ctx);
-        SXRRigidBody floorBody = new SXRRigidBody(ctx);
+        SXRRigidBody floorBody = new SXRRigidBody(ctx, 0, 2);
 
         floorBody.setSimulationType(SXRRigidBody.STATIC);
         floorBody.setRestitution(0.5f);
@@ -169,7 +176,6 @@ public class AvatarMain extends SXRMain
         {
             SXRTexture  floorTex = ctx.getAssetLoader().loadTexture(new SXRAndroidResource(ctx, "checker.png"));
             floorMtl.setMainTexture(floorTex);
-            floor.getRenderData().setMaterial(floorMtl);
         }
         catch (IOException ex)
         {
@@ -181,6 +187,7 @@ public class AvatarMain extends SXRMain
         floorMtl.setDiffuseColor(0.7f, 0.6f, 0.5f, 1);
         floorMtl.setSpecularColor(1, 1, 0.8f, 1);
         floorMtl.setSpecularExponent(4.0f);
+        floor.getRenderData().setMaterial(floorMtl);
         floor.getTransform().setPositionY(-5);
         floor.getRenderData().setCastShadows(false);
         skyBox.getRenderData().setCastShadows(false);
@@ -200,8 +207,12 @@ public class AvatarMain extends SXRMain
         env.addChildObject(floor);
         mPhysicsRoot.addChildObject(env);
 
-        mWorld = new SXRWorld(mScene, true);
-        mWorld.setGravity(0, -9.81f, 0);
+        SXRCollisionMatrix cm = new SXRCollisionMatrix();
+        cm.enableCollision(0, 1);
+        cm.enableCollision(0, 2);
+        cm.enableCollision(1, 0);
+        cm.enableCollision(1, 2);
+        mWorld = new SXRWorld(mScene, cm, true);
         floor.attachCollider(floorCollider);
         floor.attachComponent(floorBody);
         return env;
@@ -215,8 +226,7 @@ public class AvatarMain extends SXRMain
         }
         try
         {
-            SXRAndroidResource res =
-                new SXRAndroidResource(mContext, mAnimationPaths[mNumAnimsLoaded]);
+            SXRAndroidResource res = new SXRAndroidResource(mContext, mAnimationPaths[mNumAnimsLoaded]);
             avatar.loadAnimation(res, bonemap);
         }
         catch (IOException ex)
@@ -232,28 +242,24 @@ public class AvatarMain extends SXRMain
     {
         try
         {
-            SXRAndroidResource res = new SXRAndroidResource(mContext, physicsFile);
-            SXRPhysicsContent importedWorld = SXRPhysicsLoader.loadAVTFile(mContext, res, mWorld.isMultiBody());
-            if (importedWorld != null)
+            SXRPhysicsContent physics = SXRPhysicsLoader.loadAvatarFile(mContext, physicsFile, mWorld.isMultiBody());
+
+            if (physics == null)
             {
-                SXRNode physicsRoot = importedWorld.getOwnerObject();
+                return;
+            }
+            SXRNode physicsRoot = physics.getOwnerObject();
+            if ((physicsRoot != null) && (avatarSkel != null))
+            {
+                List<SXRComponent> components = physicsRoot.getAllComponents(SXRSkeleton.getComponentType());
 
-                mWorld.merge(importedWorld);
-                if ((physicsRoot != null) && (avatarSkel != null))
+                if ((physicsRoot != null) && (avatarSkel != null) && (components.size() > 0))
                 {
-                    List<SXRComponent> components = physicsRoot.getAllComponents(SXRPhysicsJoint.getComponentType());
-
-                    for (SXRComponent c : components)
-                    {
-                        SXRPhysicsJoint rootJoint = (SXRPhysicsJoint) c;
-                        if (rootJoint.getBoneID() == 0)
-                        {
-                            rootJoint.getSkeleton();
-                            rootJoint.mapPoseToSkeleton(avatarSkel, 10000);
-                        }
-                    }
+                    SXRSkeleton physicsSkel = (SXRSkeleton) components.get(0);
+                    mPhysicsToAvatar = new SXRPoseMapper(avatarSkel, physicsSkel, 100000);
                 }
             }
+            mWorld.merge(physics);
         }
         catch (IOException ex)
         {
@@ -264,21 +270,29 @@ public class AvatarMain extends SXRMain
     @Override
     public void onSingleTapUp(MotionEvent event)
     {
-        if (!mWorld.isMultiBody())
-        {
-            SXRNode debugDraw = mWorld.setupDebugDraw();
-            mScene.addNode(debugDraw);
-            mWorld.setDebugMode(-1);
-        }
+// Include the following 3 lines for Bullet debug draw
+//        SXRNode debugDraw = mWorld.setupDebugDraw();
+//        mScene.addNode(debugDraw);
+//        mWorld.setDebugMode(-1);
         mWorld.setEnable(true);
     }
 
     @Override
     public void onStep()
     {
-        if (mAvatarSkel != null)
+        if (mPhysicsToAvatar != null)
         {
-            mAvatarSkel.poseFromBones();
+            SXRSkeleton physicsSkel = mPhysicsToAvatar.getSourceSkeleton();
+
+            if (mWorld.isMultiBody())
+            {
+                physicsSkel.getNativePose();
+            }
+            else
+            {
+                physicsSkel.poseFromBones();
+            }
+            mPhysicsToAvatar.animate(0);
         }
     }
 
@@ -292,9 +306,11 @@ public class AvatarMain extends SXRMain
             stream.read(bytes);
             stream.close();
             return new String(bytes);
-        } catch (IOException ex)
+        }
+        catch (IOException ex)
         {
             return null;
         }
     }
-}
+
+    }
