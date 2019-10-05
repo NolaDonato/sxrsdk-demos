@@ -191,7 +191,7 @@ public class AvatarMain extends SXRMain
         SXRNode skyBox = new SXRSphereNode(ctx, false, skyMtl);
         SXRNode floor = new SXRCubeNode(ctx, true, new Vector3f(30, 10, 30));
         SXRBoxCollider floorCollider = new SXRBoxCollider(ctx);
-        SXRRigidBody floorBody = new SXRRigidBody(ctx, 0, 2);
+        SXRRigidBody floorBody = new SXRRigidBody(ctx, 0, 10);
 
         floorBody.setSimulationType(SXRRigidBody.STATIC);
         floorBody.setRestitution(0.5f);
@@ -232,10 +232,17 @@ public class AvatarMain extends SXRMain
         mPhysicsRoot.addChildObject(env);
 
         SXRCollisionMatrix cm = new SXRCollisionMatrix();
+
         cm.enableCollision(0, 1);
         cm.enableCollision(0, 2);
-        cm.enableCollision(1, 0);
         cm.enableCollision(1, 2);
+        cm.enableCollision(0, 10);
+        cm.enableCollision(1, 10);
+        cm.enableCollision(2, 10);
+        cm.disableCollision(0, 0);
+        cm.disableCollision(1, 1);
+        cm.disableCollision(2, 2);
+
         mWorld = new SXRWorld(mScene, cm, true);
         floor.attachCollider(floorCollider);
         floor.attachComponent(floorBody);
@@ -333,6 +340,7 @@ public class AvatarMain extends SXRMain
             if (mWorld.isMultiBody())
             {
                 physicsSkel.getNativePose();
+                physicsSkel.poseToBones();
             }
             else
             {
