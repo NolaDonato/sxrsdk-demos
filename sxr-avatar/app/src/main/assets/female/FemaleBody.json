@@ -1,0 +1,6 @@
+{
+"type" : "avatar",
+"model" : "female/Body_Female.gltf",
+"avt" : "female/FemaleBody.avt",
+"targetmap" : "female/FemaleBody.tgtMap"
+}

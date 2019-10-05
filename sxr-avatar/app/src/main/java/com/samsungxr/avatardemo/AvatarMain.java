@@ -1,6 +1,5 @@
 package com.samsungxr.avatardemo;
 
-import android.graphics.Color;
 import android.util.Log;
 import android.view.MotionEvent;
 
@@ -14,11 +13,9 @@ import com.samsungxr.SXRDirectLight;
 import com.samsungxr.SXRMain;
 import com.samsungxr.SXRMaterial;
 import com.samsungxr.SXRNode;
-import com.samsungxr.SXRRenderData;
 import com.samsungxr.SXRScene;
 import com.samsungxr.SXRSpotLight;
 import com.samsungxr.SXRTexture;
-import com.samsungxr.SXRTransform;
 import com.samsungxr.animation.SXRAnimation;
 import com.samsungxr.animation.SXRAnimator;
 import com.samsungxr.animation.SXRAvatar;
@@ -30,12 +27,10 @@ import com.samsungxr.nodes.SXRCubeNode;
 import com.samsungxr.nodes.SXRSphereNode;
 import com.samsungxr.physics.SXRCollisionMatrix;
 import com.samsungxr.physics.SXRPhysicsContent;
-import com.samsungxr.physics.SXRPhysicsJoint;
 import com.samsungxr.physics.SXRPhysicsLoader;
 import com.samsungxr.physics.SXRRigidBody;
 import com.samsungxr.physics.SXRWorld;
 
-import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
 import java.io.IOException;
@@ -47,9 +42,9 @@ public class AvatarMain extends SXRMain
 //    private final String mModelPath = "YBot/ybot.fbx";
     //private final String[] mAnimationPaths =  { "YBot/Zombie_Stand_Up_mixamo.com.bvh", "YBot/Football_Hike_mixamo.com.bvh" };
     //private final String mBoneMapPath = "animation/mixamo/mixamo_map.txt";
-    private final String mModelPath = "female_caucasian_adult/FemaleBody.gltf";
+    private final String mModelPath = "female/FemaleBody.gltf";
     private final String[] mAnimationPaths =  { "animation/Motion_Body_HappyDance.bvh" };
-    private final String mBoneMapPath = "female_caucasian_adult/DMbonemap.txt";
+    private final String mBoneMapPath = "female/DMbonemap.txt";
     private static final String TAG = "AVATAR";
     private SXRContext mContext;
     private SXRScene mScene;
@@ -61,6 +56,7 @@ public class AvatarMain extends SXRMain
     private SXRAvatar mAvatar;
     private SXRSkeleton mAvatarSkel = null;
     private SXRPoseMapper mPhysicsToAvatar = null;
+    private SXRSkeleton mPhysicsSkel = null;
 
     public AvatarMain(SXRActivity activity) {
         mActivity = activity;
@@ -77,6 +73,14 @@ public class AvatarMain extends SXRMain
                 mPhysicsRoot.addChildObject(avatarRoot);
                 mAvatarSkel = avatar.getSkeleton();
                 mAvatarSkel.poseToBones();
+                try
+                {
+                    String headDesc = readFile("female/FemaleHead.json");
+                    avatar.loadModel(new SXRAndroidResource(mContext, "female/Head_Female.glb"), headDesc, "head_JNT");
+                    loadHair("hair/myemojihair_long25_Male.gltf");
+                }
+                catch (IOException e) { }
+
 //                loadPhysics("female_caucasian_adult/FemaleBody.avt", mAvatarSkel);
                 loadPhysics("Test.avt", mAvatarSkel);
                 //loadNextAnimation(avatar, mBoneMap);
@@ -107,12 +111,19 @@ public class AvatarMain extends SXRMain
             loadNextAnimation(avatar, mBoneMap);
         }
 
-        public void onModelLoaded(SXRAvatar avatar, final SXRNode avatarRoot, String filePath, String errors) { }
+        public void onModelLoaded(SXRAvatar avatar, final SXRNode modelRoot, String filePath, String errors)
+        {
+            if ("head".equals(avatar.findModelName(modelRoot)))
+            {
+                loadHair("hair/myemojihair_long25_Male.gltf");
+            }
+        }
 
         public void onAnimationFinished(SXRAvatar avatar, SXRAnimator animator) { }
 
         public void onAnimationStarted(SXRAvatar avatar, SXRAnimator animator) { }
     };
+
 
 
     @Override
@@ -131,10 +142,9 @@ public class AvatarMain extends SXRMain
         ctx.getInputManager().selectController();
     }
 
-    @Override
     public void onAfterInit()
     {
-        loadAvatar("female_caucasian_adult");
+        loadAvatar("female.FemaleBody.gltf");
     }
 
     private void loadAvatar(String avatarFile)
@@ -146,6 +156,20 @@ public class AvatarMain extends SXRMain
         try
         {
             avatar.loadModel(new SXRAndroidResource(mContext, mModelPath));
+        }
+        catch (IOException e)
+        {
+            e.printStackTrace();
+            mActivity.finish();
+            mActivity = null;
+        }
+    }
+
+    private void loadHair(String hairFile)
+    {
+        try
+        {
+            mAvatar.loadModel(new SXRAndroidResource(mContext, hairFile));
         }
         catch (IOException e)
         {
@@ -255,11 +279,33 @@ public class AvatarMain extends SXRMain
 
                 if ((physicsRoot != null) && (avatarSkel != null) && (components.size() > 0))
                 {
-                    SXRSkeleton physicsSkel = (SXRSkeleton) components.get(0);
-                    mPhysicsToAvatar = new SXRPoseMapper(avatarSkel, physicsSkel, 100000);
+                    mPhysicsSkel = (SXRSkeleton) components.get(0);
+                    mPhysicsToAvatar = new SXRPoseMapper(avatarSkel, mPhysicsSkel, 100000);
                 }
             }
             mWorld.merge(physics);
+            loadHairPhysics("hair/myemojihair_long25_Male.avt");
+        }
+        catch (IOException ex)
+        {
+            Log.e(TAG, "Problem loading physics file " + physicsFile + " " + ex.getMessage());
+        }
+    }
+
+    public void loadHairPhysics(String physicsFile)
+    {
+        if (mPhysicsSkel == null)
+        {
+            return;
+        }
+        try
+        {
+            SXRPhysicsContent physics = SXRPhysicsLoader.loadAvatarFile(mPhysicsSkel, physicsFile, "head_JNT", mWorld.isMultiBody());
+
+            if (physics != null)
+            {
+                mWorld.merge(physics);
+            }
         }
         catch (IOException ex)
         {
