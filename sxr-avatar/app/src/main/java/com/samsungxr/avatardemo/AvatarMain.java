@@ -26,7 +26,9 @@ import com.samsungxr.animation.keyframe.SXRSkeletonAnimation;
 import com.samsungxr.nodes.SXRCubeNode;
 import com.samsungxr.nodes.SXRSphereNode;
 import com.samsungxr.physics.SXRCollisionMatrix;
+import com.samsungxr.physics.SXRFixedConstraint;
 import com.samsungxr.physics.SXRPhysicsContent;
+import com.samsungxr.physics.SXRPhysicsJoint;
 import com.samsungxr.physics.SXRPhysicsLoader;
 import com.samsungxr.physics.SXRRigidBody;
 import com.samsungxr.physics.SXRWorld;
@@ -288,10 +290,11 @@ public class AvatarMain extends SXRMain
                 {
                     mPhysicsSkel = (SXRSkeleton) components.get(0);
                     mPhysicsToAvatar = new SXRPoseMapper(avatarSkel, mPhysicsSkel, 100000);
+                    mPhysicsSkel.disable();
                 }
             }
             mWorld.merge(physics);
-            loadHairPhysics("hair/myemojihair_long25_Male.avt");
+            loadHairPhysics("hair/myemojihair_Long25_Male.avt");
         }
         catch (IOException ex)
         {
@@ -308,16 +311,25 @@ public class AvatarMain extends SXRMain
         try
         {
             SXRPhysicsContent physics = SXRPhysicsLoader.loadAvatarFile(mPhysicsSkel, physicsFile, "head_JNT", mWorld.isMultiBody());
-
             if (physics != null)
             {
+                int attachIndex1 = mPhysicsSkel.getBoneIndex("head_JNT");
+                int attachIndex2 = mPhysicsSkel.getBoneIndex("attachTo_head_JNT");
+                SXRNode attachNode1 = mPhysicsSkel.getBone(attachIndex1);
+                SXRNode attachNode2 = mPhysicsSkel.getBone(attachIndex2);
+                SXRPhysicsJoint attachJoint1 = (SXRPhysicsJoint) attachNode1.getComponent(SXRPhysicsJoint.getComponentType());
+                SXRPhysicsJoint attachJoint2 = (SXRPhysicsJoint) attachNode2.getComponent(SXRPhysicsJoint.getComponentType());
+                SXRFixedConstraint attachConstraint = new SXRFixedConstraint(mContext, attachJoint1);
+
                 mWorld.merge(physics);
+                attachNode2.attachComponent(attachConstraint);
             }
         }
         catch (IOException ex)
         {
             Log.e(TAG, "Problem loading physics file " + physicsFile + " " + ex.getMessage());
         }
+        mPhysicsSkel.enable();
     }
 
     @Override
