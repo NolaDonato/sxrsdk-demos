@@ -234,16 +234,21 @@ public class AvatarMain extends SXRMain
         mPhysicsRoot.addChildObject(env);
 
         SXRCollisionMatrix cm = new SXRCollisionMatrix();
+        int bodyMask = cm.getCollisionFilterMask(0) |
+                         cm.getCollisionFilterMask(1) |
+                         cm.getCollisionFilterMask(2) |
+                         cm.getCollisionFilterMask(3) |
+                         cm.getCollisionFilterMask(10);
+        int floorMask = cm.getCollisionFilterMask(0) |
+                          cm.getCollisionFilterMask(1) |
+                          cm.getCollisionFilterMask(2) |
+                          cm.getCollisionFilterMask(3);
 
-        cm.enableCollision(0, 1);
-        cm.enableCollision(0, 2);
-        cm.enableCollision(1, 2);
-        cm.enableCollision(0, 10);
-        cm.enableCollision(1, 10);
-        cm.enableCollision(2, 10);
-        cm.disableCollision(0, 0);
-        cm.disableCollision(1, 1);
-        cm.disableCollision(2, 2);
+        cm.setCollisionFilterMask(0, (short) bodyMask);
+        cm.setCollisionFilterMask(1, (short) bodyMask);
+        cm.setCollisionFilterMask(2, (short) bodyMask);
+        cm.setCollisionFilterMask(3, (short) bodyMask);
+        cm.setCollisionFilterMask(10, (short) floorMask);
 
         mWorld = new SXRWorld(mScene, cm, true);
         floor.attachCollider(floorCollider);
@@ -294,7 +299,7 @@ public class AvatarMain extends SXRMain
                 }
             }
             mWorld.merge(physics);
-            loadHairPhysics("hair/myemojihair_Long25_Male.avt");
+//            loadHairPhysics("hair/myemojihair_Long25_Male.avt");
         }
         catch (IOException ex)
         {
@@ -314,14 +319,15 @@ public class AvatarMain extends SXRMain
             if (physics != null)
             {
                 int attachIndex1 = mPhysicsSkel.getBoneIndex("head_JNT");
-                int attachIndex2 = mPhysicsSkel.getBoneIndex("attachTo_head_JNT");
                 SXRNode attachNode1 = mPhysicsSkel.getBone(attachIndex1);
-                SXRNode attachNode2 = mPhysicsSkel.getBone(attachIndex2);
+                SXRNode attachNode2 = physics.getOwnerObject().getChildByIndex(0);
+                SXRSkeleton physicsSkel = (SXRSkeleton) attachNode2.getComponent(SXRSkeleton.getComponentType());
                 SXRPhysicsJoint attachJoint1 = (SXRPhysicsJoint) attachNode1.getComponent(SXRPhysicsJoint.getComponentType());
                 SXRPhysicsJoint attachJoint2 = (SXRPhysicsJoint) attachNode2.getComponent(SXRPhysicsJoint.getComponentType());
                 SXRFixedConstraint attachConstraint = new SXRFixedConstraint(mContext, attachJoint1);
 
                 mWorld.merge(physics);
+                mPhysicsSkel.merge(physicsSkel, "head_JNT");
                 attachNode2.attachComponent(attachConstraint);
             }
         }
@@ -329,16 +335,16 @@ public class AvatarMain extends SXRMain
         {
             Log.e(TAG, "Problem loading physics file " + physicsFile + " " + ex.getMessage());
         }
-        mPhysicsSkel.enable();
     }
 
     @Override
     public void onSingleTapUp(MotionEvent event)
     {
 // Include the following 3 lines for Bullet debug draw
-//        SXRNode debugDraw = mWorld.setupDebugDraw();
-//        mScene.addNode(debugDraw);
-//        mWorld.setDebugMode(-1);
+        SXRNode debugDraw = mWorld.setupDebugDraw();
+        mScene.addNode(debugDraw);
+        mWorld.setDebugMode(-1);
+        mPhysicsSkel.enable();
         mWorld.setEnable(true);
     }
 
@@ -349,16 +355,11 @@ public class AvatarMain extends SXRMain
         {
             SXRSkeleton physicsSkel = mPhysicsToAvatar.getSourceSkeleton();
 
-            if (mWorld.isMultiBody())
-            {
-                physicsSkel.getNativePose();
-                physicsSkel.poseToBones();
-            }
-            else
+            if (physicsSkel.isEnabled())
             {
                 physicsSkel.poseFromBones();
+                mPhysicsToAvatar.animate(0);
             }
-            mPhysicsToAvatar.animate(0);
         }
     }
 
