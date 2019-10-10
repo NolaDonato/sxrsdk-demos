@@ -1,0 +1,8 @@
+{
+  "type" : "hyair",
+  "model" : "hair/myemojihair_Long25_Male.gltf",
+  "avt" : "hair/myemojihair_Long25_Male.avt",
+  "age" : "adult",
+  "gender" : "female",
+  "attachbone" : "head_JNT"
+}
