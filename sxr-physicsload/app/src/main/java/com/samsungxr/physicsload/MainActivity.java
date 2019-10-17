@@ -97,7 +97,7 @@ public class MainActivity extends SXRActivity {
         void initPhysics(SXRContext sxrContext) {
             SXRScene mainScene = sxrContext.getMainScene();
 
-            SXRWorld world = new SXRWorld(sxrContext);
+            SXRWorld world = new SXRWorld(mainScene);
             world.setGravity(0f, -10f, 0f);
             mainScene.getRoot().attachComponent(world);
         }
@@ -137,7 +137,8 @@ public class MainActivity extends SXRActivity {
 //                loadAndAddCollider(sxrContext,"Plane.fbx");
 
                 // Up-axis must be ignored because scene objects were rotated when exported
-                SXRPhysicsLoader.loadPhysicsFile(sxrContext, "scene3.bullet", true, mainScene);
+                SXRPhysicsLoader loader = new SXRPhysicsLoader(sxrContext);
+                loader.loadBulletFile(mainScene, "scene3.bullet", true);
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -192,7 +193,8 @@ public class MainActivity extends SXRActivity {
             // This bullet file was created from a bullet application to add fixed and slider
             // constraints that are not available on Blender
             try {
-                SXRPhysicsLoader.loadPhysicsFile(sxrContext, "fixed_slider.bullet", mainScene);
+                SXRPhysicsLoader loader = new SXRPhysicsLoader(sxrContext);
+                loader.loadBulletFile(mainScene, "fixed_slider.bullet");
             } catch (IOException e) {
                 e.printStackTrace();
             }

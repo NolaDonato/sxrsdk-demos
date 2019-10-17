@@ -136,7 +136,7 @@ public class MainScript extends SXRMain implements SXRNode.ComponentVisitor {
         mBallProto = new SXRSphereNode(sxrContext, true, new SXRMaterial(sxrContext, SXRMaterial.SXRShaderType.Phong.ID));
         initScene(sxrContext, mScene);
         initLabels(sxrContext, mScene);
-        mWorld = new SXRWorld(sxrContext, MainHelper.collisionMatrix);
+        mWorld = new SXRWorld(mScene, MainHelper.collisionMatrix);
         mScene.getEventReceiver().addListener(this);
         sxrContext.getInputManager().selectController(mControllerSelector);
         mWorld.setEnable(true);
