@@ -67,7 +67,7 @@ public class MainScript extends SXRMain implements SXRNode.ComponentVisitor {
             int action = event.getAction();
             if ((mCurrentBall == null) && (action == MotionEvent.ACTION_DOWN))
             {
-                mCurrentBall = newBall();
+                mCurrentBall = newBall(mScene);
                 SXRRigidBody rigidBody = (SXRRigidBody) mCurrentBall.getComponent(SXRRigidBody.getComponentType());
                 rigidBody.setEnable(false);
                 controller.getCursor().addChildObject(mCurrentBall);
@@ -136,7 +136,7 @@ public class MainScript extends SXRMain implements SXRNode.ComponentVisitor {
         mBallProto = new SXRSphereNode(sxrContext, true, new SXRMaterial(sxrContext, SXRMaterial.SXRShaderType.Phong.ID));
         initScene(sxrContext, mScene);
         initLabels(sxrContext, mScene);
-        mWorld = new SXRWorld(sxrContext, MainHelper.collisionMatrix);
+        mWorld = new SXRWorld(mScene, MainHelper.collisionMatrix);
         mScene.getEventReceiver().addListener(this);
         sxrContext.getInputManager().selectController(mControllerSelector);
         mWorld.setEnable(true);
@@ -231,12 +231,11 @@ public class MainScript extends SXRMain implements SXRNode.ComponentVisitor {
 
         try {
             SXRTransform trans = mCamera.getTransform();
-            SXRNode ball = MainHelper.createBall(mBallProto,
+            SXRNode ball = MainHelper.createBall(mScene, mBallProto,
                     5 * forward[0] + trans.getPositionX(),
                     5 * forward[1] + trans.getPositionY(),
                     5 * forward[2] + trans.getPositionZ(), force);
 
-            mScene.addNode(ball);
             mNumBalls++;
 
             mBallsLabel.setText("Balls: " + (MAX_BALLS - mNumBalls));
@@ -246,12 +245,13 @@ public class MainScript extends SXRMain implements SXRNode.ComponentVisitor {
     }
 
 
-    private SXRNode newBall()
+    private SXRNode newBall(SXRScene scene)
     {
         try
         {
-            SXRNode ball = MainHelper.createBall(mBallProto,
+            SXRNode ball = MainHelper.createBall(scene, mBallProto,
                    0,0,0, new float[] { 0, 0, 0 });
+            scene.removeNode(ball);
             mNumBalls++;
             mBallsLabel.setText("Balls: " + (MAX_BALLS - mNumBalls));
             return ball;

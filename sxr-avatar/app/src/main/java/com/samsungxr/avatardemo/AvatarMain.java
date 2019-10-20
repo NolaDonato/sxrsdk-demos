@@ -268,7 +268,8 @@ public class AvatarMain extends SXRMain
     {
         try
         {
-            SXRPhysicsContent physics = SXRPhysicsLoader.loadAvatarFile(mContext, physicsFile, mWorld.isMultiBody());
+            SXRPhysicsLoader loader = new SXRPhysicsLoader(mContext);
+            SXRPhysicsContent physics = loader.loadAvatarFile(physicsFile, mWorld.isMultiBody());
 
             if (physics == null)
             {
@@ -303,7 +304,8 @@ public class AvatarMain extends SXRMain
         }
         try
         {
-            SXRPhysicsContent physics = SXRPhysicsLoader.loadAvatarFile(mPhysicsSkel, physicsFile, "head_JNT", mWorld.isMultiBody());
+            SXRPhysicsLoader loader = new SXRPhysicsLoader(mContext);
+            SXRPhysicsContent physics = loader.loadAvatarFile(mPhysicsSkel, physicsFile, "head_JNT", mWorld.isMultiBody());
             if (physics != null)
             {
                 int attachIndex1 = mPhysicsSkel.getBoneIndex("head_JNT");

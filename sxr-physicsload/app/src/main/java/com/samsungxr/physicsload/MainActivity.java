@@ -16,8 +16,12 @@
 package com.samsungxr.physicsload;
 
 import android.os.Bundle;
+import android.os.Environment;
+import android.view.MotionEvent;
 
 import com.samsungxr.SXRActivity;
+import com.samsungxr.SXRAndroidResource;
+import com.samsungxr.SXRBoxCollider;
 import com.samsungxr.SXRContext;
 import com.samsungxr.SXRDirectLight;
 import com.samsungxr.SXRMain;
@@ -57,9 +61,14 @@ public class MainActivity extends SXRActivity {
         super.onCreate(savedInstance);
 
         setMain(new Main());
+        enableGestureDetector();
     }
 
+    SXRPhysicsLoader mPhysicsLoader;
+
     private final class Main extends SXRMain {
+        private SXRWorld mWorld;
+
         @Override
         public void onInit(SXRContext sxrContext) {
             initScene(sxrContext);
@@ -97,17 +106,17 @@ public class MainActivity extends SXRActivity {
         void initPhysics(SXRContext sxrContext) {
             SXRScene mainScene = sxrContext.getMainScene();
 
-            SXRWorld world = new SXRWorld(sxrContext);
-            world.setGravity(0f, -10f, 0f);
-            mainScene.getRoot().attachComponent(world);
+            mWorld = new SXRWorld(mainScene);
+            mWorld.setGravity(0f, -9.81f, 0f);
+            mainScene.getRoot().attachComponent(mWorld);
         }
 
-        void loadAndAddCollider(SXRContext sxrContext, String fname) throws IOException {
+        void loadModel(SXRContext sxrContext, String fname) throws IOException {
             SXRNode model = sxrContext.getAssetLoader().loadModel(fname, sxrContext.getMainScene());
 
             // This approach works fine for simple objects exported as FBX
             SXRNode object = model.getChildByIndex(0).getChildByIndex(0);
-            object.attachComponent(new SXRMeshCollider(object.getSXRContext(), true));
+//            object.attachComponent(new SXRMeshCollider(object.getSXRContext(), true));
         }
 
         void loadBlenderAssets(SXRContext sxrContext) {
@@ -115,29 +124,31 @@ public class MainActivity extends SXRActivity {
 
             try {
                 // 'Cone' and 'Cone.001' will be linked by a Hinge constraint
-                loadAndAddCollider(sxrContext,"Cone.fbx");
-                loadAndAddCollider(sxrContext,"Cone_001.fbx");
+                loadModel(sxrContext,"Cone.fbx");
+                loadModel(sxrContext,"Cone_001.fbx");
 
                 // 'Cube' and 'Cube.001' will be linked by a Cone-twist constraint
-                loadAndAddCollider(sxrContext,"Cube.fbx");
-                loadAndAddCollider(sxrContext,"Cube_001.fbx");
+                loadModel(sxrContext,"Cube.fbx");
+                loadModel(sxrContext,"Cube_001.fbx");
 
                 // 'Cube.002' and 'Cube.003' will be linked by a Generic 6DoF constraint
-                loadAndAddCollider(sxrContext,"Cube_002.fbx");
-                loadAndAddCollider(sxrContext,"Cube_003.fbx");
+                loadModel(sxrContext,"Cube_002.fbx");
+                loadModel(sxrContext,"Cube_003.fbx");
 
-                loadAndAddCollider(sxrContext,"Cube_004.fbx");
+                loadModel(sxrContext,"Cube_004.fbx");
 
                 // 'Cylinder' and 'Sphere' will be linked by a Point-to-point constraint
-                loadAndAddCollider(sxrContext,"Cylinder.fbx");
-                loadAndAddCollider(sxrContext,"Sphere.fbx");
+                loadModel(sxrContext,"Cylinder.fbx");
+                loadModel(sxrContext,"Sphere.fbx");
 
                 // Plane object is not being loaded due to an issue when exporting this kind of
                 // object from Blender to SXRf with physics properties
-//                loadAndAddCollider(sxrContext,"Plane.fbx");
+//                loadModel(sxrContext,"Plane.fbx");
 
                 // Up-axis must be ignored because scene objects were rotated when exported
-                SXRPhysicsLoader.loadPhysicsFile(sxrContext, "scene3.bullet", true, mainScene);
+                SXRAndroidResource r = new SXRAndroidResource(sxrContext, "scene3.bullet");
+                SXRPhysicsLoader loader = new SXRPhysicsLoader(sxrContext);
+                loader.loadBulletFile(mainScene, r);
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -153,7 +164,7 @@ public class MainActivity extends SXRActivity {
             SXRNode box1 = new SXRCubeNode(sxrContext, true, redMat);
             box1.getTransform().setPosition(5f, 5f, 10f);
             box1.setName("bodyA");
-            box1.attachComponent(new SXRMeshCollider(sxrContext, true));
+//            box1.attachComponent(new SXRMeshCollider(sxrContext, true));
             mainScene.addNode(box1);
 
             SXRMaterial whiteMat = new SXRMaterial(sxrContext, SXRMaterial.SXRShaderType.Phong.ID);
@@ -161,7 +172,7 @@ public class MainActivity extends SXRActivity {
             SXRNode box2 = new SXRCubeNode(sxrContext, true, whiteMat);
             box2.getTransform().setPosition(5f, 10f, 10f);
             box2.setName("bodyB");
-            box2.attachComponent(new SXRMeshCollider(sxrContext, true));
+//            box2.attachComponent(new SXRMeshCollider(sxrContext, true));
             mainScene.addNode(box2);
 
             // 'bodyP' and 'bodyQ' will be linked by a Slider constraint
@@ -170,7 +181,7 @@ public class MainActivity extends SXRActivity {
             SXRNode box3 = new SXRCubeNode(sxrContext, true, blueMat);
             box3.getTransform().setPosition(-5f, 10f, 10f);
             box3.setName("bodyP");
-            box3.attachComponent(new SXRMeshCollider(sxrContext, true));
+//            box3.attachComponent(new SXRMeshCollider(sxrContext, true));
             mainScene.addNode(box3);
 
             SXRMaterial greenMat = new SXRMaterial(sxrContext, SXRMaterial.SXRShaderType.Phong.ID);
@@ -178,7 +189,7 @@ public class MainActivity extends SXRActivity {
             SXRNode box4 = new SXRCubeNode(sxrContext, true, greenMat);
             box4.getTransform().setPosition(-10f, 10f, 10f);
             box4.setName("bodyQ");
-            box4.attachComponent(new SXRMeshCollider(sxrContext, true));
+//            box4.attachComponent(new SXRMeshCollider(sxrContext, true));
             mainScene.addNode(box4);
 
             SXRMaterial yellowMat = new SXRMaterial(sxrContext, SXRMaterial.SXRShaderType.Phong.ID);
@@ -186,13 +197,15 @@ public class MainActivity extends SXRActivity {
             SXRNode box5 = new SXRCubeNode(sxrContext, true, yellowMat);
             box5.getTransform().setPosition(-4.5f, 5f, 10.5f);
             box5.setName("barrier");
-            box5.attachComponent(new SXRMeshCollider(sxrContext, true));
+//            box5.attachComponent(new SXRMeshCollider(sxrContext, true));
             mainScene.addNode(box5);
 
             // This bullet file was created from a bullet application to add fixed and slider
             // constraints that are not available on Blender
             try {
-                SXRPhysicsLoader.loadPhysicsFile(sxrContext, "fixed_slider.bullet", mainScene);
+                SXRPhysicsLoader loader = new SXRPhysicsLoader(sxrContext);
+
+                loader.loadBulletFile(mainScene, "fixed_slider.bullet");
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -204,10 +217,22 @@ public class MainActivity extends SXRActivity {
             floor.getTransform().setPosition(0f, -10f, 0f);
             floor.getTransform().setRotationByAxis(-90f, 1f, 0f, 0f);
             floor.getRenderData().setMaterial(orangeMat);
-            floor.attachComponent(new SXRMeshCollider(sxrContext, floor.getRenderData().getMesh()));
+            floor.attachComponent(new SXRBoxCollider(sxrContext));
             mainScene.addNode(floor);
             SXRRigidBody floorRb = new SXRRigidBody(sxrContext, 0f);
             floor.attachComponent(floorRb);
         }
+
+        @Override
+        public void onSingleTapUp(MotionEvent event)
+        {
+            // Include the following 3 lines for Bullet debug draw
+//            SXRNode debugDraw = mWorld.setupDebugDraw();
+//            mWorld.getSXRContext().getMainScene()/addNode(debugDraw);
+//            mWorld.setDebugMode(-1);
+            mWorld.setEnable(true);
+        }
     }
+
+
 }
