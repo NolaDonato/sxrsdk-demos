@@ -56,6 +56,8 @@ import java.io.IOException;
  */
 
 public class MainActivity extends SXRActivity {
+    private SXRWorld mWorld;
+
     @Override
     protected void onCreate(Bundle savedInstance) {
         super.onCreate(savedInstance);
@@ -75,6 +77,7 @@ public class MainActivity extends SXRActivity {
             initPhysics(sxrContext);
             loadBlenderAssets(sxrContext);
             complementScene(sxrContext);
+            mWorld.enable();
         }
 
         void initScene(SXRContext sxrContext) {
