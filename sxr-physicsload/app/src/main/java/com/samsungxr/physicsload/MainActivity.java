@@ -29,10 +29,12 @@ import com.samsungxr.SXRMaterial;
 import com.samsungxr.SXRMeshCollider;
 import com.samsungxr.SXRScene;
 import com.samsungxr.SXRNode;
+import com.samsungxr.physics.SXRPhysicsContent;
 import com.samsungxr.physics.SXRPhysicsLoader;
 import com.samsungxr.physics.SXRRigidBody;
 import com.samsungxr.physics.SXRWorld;
 import com.samsungxr.nodes.SXRCubeNode;
+import com.samsungxr.utility.Log;
 
 import java.io.IOException;
 
@@ -71,13 +73,30 @@ public class MainActivity extends SXRActivity {
     private final class Main extends SXRMain {
         private SXRWorld mWorld;
 
+        private SXRPhysicsLoader.IPhysicsLoaderEvents mLoadHandler = new SXRPhysicsLoader.IPhysicsLoaderEvents() {
+            @Override
+            public void onPhysicsLoaded(SXRPhysicsContent world, String filename)
+            {
+                SXRNode root = world.getOwnerObject();
+
+                world.getSXRContext().getMainScene().addNode(root);
+                mWorld.merge(world);
+            }
+
+            @Override
+            public void onLoadError(String filename, String errors)
+            {
+                Log.e("PhysicsLoad",  errors);
+            }
+        };
+
         @Override
         public void onInit(SXRContext sxrContext) {
             initScene(sxrContext);
             initPhysics(sxrContext);
-            loadBlenderAssets(sxrContext);
-            complementScene(sxrContext);
-            mWorld.enable();
+//            loadBlenderAssets(sxrContext);
+//            complementScene(sxrContext);
+//            mWorld.enable();
         }
 
         void initScene(SXRContext sxrContext) {
@@ -109,17 +128,31 @@ public class MainActivity extends SXRActivity {
         void initPhysics(SXRContext sxrContext) {
             SXRScene mainScene = sxrContext.getMainScene();
 
-            mWorld = new SXRWorld(mainScene);
+            mWorld = new SXRWorld(mainScene, true);
             mWorld.setGravity(0f, -9.81f, 0f);
             mainScene.getRoot().attachComponent(mWorld);
+            // Include the following 3 lines for Bullet debug draw
+            SXRNode debugDraw = mWorld.setupDebugDraw();
+            mainScene.addNode(debugDraw);
+            createFloor(sxrContext);
+            mWorld.setDebugMode(-1);
+
+            try
+            {
+                SXRPhysicsLoader loader = new SXRPhysicsLoader(sxrContext);
+                loader.getEventReceiver().addListener(mLoadHandler);
+                SXRAndroidResource res = new SXRAndroidResource(sxrContext, "quadruped.urdf");
+
+                loader.loadPhysics(res, false);
+            }
+            catch (IOException e)
+            {
+                e.printStackTrace();
+            }
         }
 
         void loadModel(SXRContext sxrContext, String fname) throws IOException {
-            SXRNode model = sxrContext.getAssetLoader().loadModel(fname, sxrContext.getMainScene());
-
-            // This approach works fine for simple objects exported as FBX
-            SXRNode object = model.getChildByIndex(0).getChildByIndex(0);
-//            object.attachComponent(new SXRMeshCollider(object.getSXRContext(), true));
+            sxrContext.getAssetLoader().loadModel(fname, sxrContext.getMainScene());
         }
 
         void loadBlenderAssets(SXRContext sxrContext) {
@@ -151,7 +184,7 @@ public class MainActivity extends SXRActivity {
                 // Up-axis must be ignored because scene objects were rotated when exported
                 SXRAndroidResource r = new SXRAndroidResource(sxrContext, "scene3.bullet");
                 SXRPhysicsLoader loader = new SXRPhysicsLoader(sxrContext);
-                loader.loadBulletFile(mainScene, r);
+                loader.loadPhysics(mainScene, r, false);
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -208,11 +241,11 @@ public class MainActivity extends SXRActivity {
             try {
                 SXRPhysicsLoader loader = new SXRPhysicsLoader(sxrContext);
 
-                loader.loadBulletFile(mainScene, "fixed_slider.bullet");
+                loader.loadPhysics(mainScene, "fixed_slider.bullet");
             } catch (IOException e) {
                 e.printStackTrace();
             }
-
+            createFloor(sxrContext);
             // This object will replace the "Plane" exported by Blender as the floor of this scene
             SXRMaterial orangeMat = new SXRMaterial(sxrContext, SXRMaterial.SXRShaderType.Phong.ID);
             orangeMat.setDiffuseColor(0.7f, 0.3f, 0f, 1f);
@@ -224,6 +257,21 @@ public class MainActivity extends SXRActivity {
             mainScene.addNode(floor);
             SXRRigidBody floorRb = new SXRRigidBody(sxrContext, 0f);
             floor.attachComponent(floorRb);
+        }
+
+        private SXRNode createFloor(SXRContext ctx)
+        {
+            SXRMaterial orangeMat = new SXRMaterial(ctx, SXRMaterial.SXRShaderType.Phong.ID);
+            orangeMat.setDiffuseColor(0.7f, 0.3f, 0f, 1f);
+            SXRNode floor = new SXRNode(ctx, 100f, 100f);
+            floor.getTransform().setPosition(0f, -10f, 0f);
+            floor.getTransform().setRotationByAxis(-90f, 1f, 0f, 0f);
+            floor.getRenderData().setMaterial(orangeMat);
+            floor.attachComponent(new SXRBoxCollider(ctx));
+            ctx.getMainScene().addNode(floor);
+            SXRRigidBody floorRb = new SXRRigidBody(ctx, 0f);
+            floor.attachComponent(floorRb);
+            return floor;
         }
 
         @Override
