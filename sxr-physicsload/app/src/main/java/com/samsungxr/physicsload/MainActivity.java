@@ -36,6 +36,8 @@ import com.samsungxr.physics.SXRWorld;
 import com.samsungxr.nodes.SXRCubeNode;
 import com.samsungxr.utility.Log;
 
+import org.joml.Vector3f;
+
 import java.io.IOException;
 
 /*
@@ -68,8 +70,6 @@ public class MainActivity extends SXRActivity {
         enableGestureDetector();
     }
 
-    SXRPhysicsLoader mPhysicsLoader;
-
     private final class Main extends SXRMain {
         private SXRWorld mWorld;
 
@@ -79,8 +79,11 @@ public class MainActivity extends SXRActivity {
             {
                 SXRNode root = world.getOwnerObject();
 
-                world.getSXRContext().getMainScene().addNode(root);
-                mWorld.merge(world);
+                if (world != mWorld)
+                {
+                    world.getSXRContext().getMainScene().addNode(root);
+                    mWorld.merge(world);
+                }
             }
 
             @Override
@@ -104,7 +107,7 @@ public class MainActivity extends SXRActivity {
 
             // Camera and light settings were copied from Blender project available in 'extras'
             // directory
-            mainScene.getMainCameraRig().getHeadTransform().setPosition(0f, 2.4f, 40f);
+            mainScene.getMainCameraRig().getHeadTransform().setPosition(0f, 0.2f, 0.5f);
             mainScene.getMainCameraRig().setFarClippingDistance(100f);
             mainScene.getMainCameraRig().setNearClippingDistance(0.1f);
 
@@ -141,7 +144,7 @@ public class MainActivity extends SXRActivity {
             {
                 SXRPhysicsLoader loader = new SXRPhysicsLoader(sxrContext);
                 loader.getEventReceiver().addListener(mLoadHandler);
-                SXRAndroidResource res = new SXRAndroidResource(sxrContext, "quadruped.urdf");
+                SXRAndroidResource res = new SXRAndroidResource(sxrContext, "r2d2.urdf");
 
                 loader.loadPhysics(res, false);
             }
@@ -200,7 +203,6 @@ public class MainActivity extends SXRActivity {
             SXRNode box1 = new SXRCubeNode(sxrContext, true, redMat);
             box1.getTransform().setPosition(5f, 5f, 10f);
             box1.setName("bodyA");
-//            box1.attachComponent(new SXRMeshCollider(sxrContext, true));
             mainScene.addNode(box1);
 
             SXRMaterial whiteMat = new SXRMaterial(sxrContext, SXRMaterial.SXRShaderType.Phong.ID);
@@ -208,7 +210,6 @@ public class MainActivity extends SXRActivity {
             SXRNode box2 = new SXRCubeNode(sxrContext, true, whiteMat);
             box2.getTransform().setPosition(5f, 10f, 10f);
             box2.setName("bodyB");
-//            box2.attachComponent(new SXRMeshCollider(sxrContext, true));
             mainScene.addNode(box2);
 
             // 'bodyP' and 'bodyQ' will be linked by a Slider constraint
@@ -217,7 +218,6 @@ public class MainActivity extends SXRActivity {
             SXRNode box3 = new SXRCubeNode(sxrContext, true, blueMat);
             box3.getTransform().setPosition(-5f, 10f, 10f);
             box3.setName("bodyP");
-//            box3.attachComponent(new SXRMeshCollider(sxrContext, true));
             mainScene.addNode(box3);
 
             SXRMaterial greenMat = new SXRMaterial(sxrContext, SXRMaterial.SXRShaderType.Phong.ID);
@@ -225,7 +225,6 @@ public class MainActivity extends SXRActivity {
             SXRNode box4 = new SXRCubeNode(sxrContext, true, greenMat);
             box4.getTransform().setPosition(-10f, 10f, 10f);
             box4.setName("bodyQ");
-//            box4.attachComponent(new SXRMeshCollider(sxrContext, true));
             mainScene.addNode(box4);
 
             SXRMaterial yellowMat = new SXRMaterial(sxrContext, SXRMaterial.SXRShaderType.Phong.ID);
@@ -233,7 +232,6 @@ public class MainActivity extends SXRActivity {
             SXRNode box5 = new SXRCubeNode(sxrContext, true, yellowMat);
             box5.getTransform().setPosition(-4.5f, 5f, 10.5f);
             box5.setName("barrier");
-//            box5.attachComponent(new SXRMeshCollider(sxrContext, true));
             mainScene.addNode(box5);
 
             // This bullet file was created from a bullet application to add fixed and slider
@@ -246,26 +244,14 @@ public class MainActivity extends SXRActivity {
                 e.printStackTrace();
             }
             createFloor(sxrContext);
-            // This object will replace the "Plane" exported by Blender as the floor of this scene
-            SXRMaterial orangeMat = new SXRMaterial(sxrContext, SXRMaterial.SXRShaderType.Phong.ID);
-            orangeMat.setDiffuseColor(0.7f, 0.3f, 0f, 1f);
-            SXRNode floor = new SXRNode(sxrContext, 100f, 100f);
-            floor.getTransform().setPosition(0f, -10f, 0f);
-            floor.getTransform().setRotationByAxis(-90f, 1f, 0f, 0f);
-            floor.getRenderData().setMaterial(orangeMat);
-            floor.attachComponent(new SXRBoxCollider(sxrContext));
-            mainScene.addNode(floor);
-            SXRRigidBody floorRb = new SXRRigidBody(sxrContext, 0f);
-            floor.attachComponent(floorRb);
         }
 
         private SXRNode createFloor(SXRContext ctx)
         {
             SXRMaterial orangeMat = new SXRMaterial(ctx, SXRMaterial.SXRShaderType.Phong.ID);
             orangeMat.setDiffuseColor(0.7f, 0.3f, 0f, 1f);
-            SXRNode floor = new SXRNode(ctx, 100f, 100f);
-            floor.getTransform().setPosition(0f, -10f, 0f);
-            floor.getTransform().setRotationByAxis(-90f, 1f, 0f, 0f);
+            SXRCubeNode floor = new SXRCubeNode(ctx, true, new Vector3f(50, 10, 50));
+            floor.getTransform().setPosition(0, -5, 0);
             floor.getRenderData().setMaterial(orangeMat);
             floor.attachComponent(new SXRBoxCollider(ctx));
             ctx.getMainScene().addNode(floor);
