@@ -73,33 +73,13 @@ public class MainActivity extends SXRActivity {
     private final class Main extends SXRMain {
         private SXRWorld mWorld;
 
-        private SXRPhysicsLoader.IPhysicsLoaderEvents mLoadHandler = new SXRPhysicsLoader.IPhysicsLoaderEvents() {
-            @Override
-            public void onPhysicsLoaded(SXRPhysicsContent world, String filename)
-            {
-                SXRNode root = world.getOwnerObject();
-
-                if (world != mWorld)
-                {
-                    world.getSXRContext().getMainScene().addNode(root);
-                    mWorld.merge(world);
-                }
-            }
-
-            @Override
-            public void onLoadError(String filename, String errors)
-            {
-                Log.e("PhysicsLoad",  errors);
-            }
-        };
-
         @Override
         public void onInit(SXRContext sxrContext) {
             initScene(sxrContext);
             initPhysics(sxrContext);
-//            loadBlenderAssets(sxrContext);
-//            complementScene(sxrContext);
-//            mWorld.enable();
+            loadBlenderAssets(sxrContext);
+            complementScene(sxrContext);
+            mWorld.enable();
         }
 
         void initScene(SXRContext sxrContext) {
@@ -107,7 +87,7 @@ public class MainActivity extends SXRActivity {
 
             // Camera and light settings were copied from Blender project available in 'extras'
             // directory
-            mainScene.getMainCameraRig().getHeadTransform().setPosition(0f, 0.2f, 0.5f);
+            mainScene.getMainCameraRig().getHeadTransform().setPosition(0f, 2.4f, 40);
             mainScene.getMainCameraRig().setFarClippingDistance(100f);
             mainScene.getMainCameraRig().setNearClippingDistance(0.1f);
 
@@ -131,27 +111,9 @@ public class MainActivity extends SXRActivity {
         void initPhysics(SXRContext sxrContext) {
             SXRScene mainScene = sxrContext.getMainScene();
 
-            mWorld = new SXRWorld(mainScene, true);
+            mWorld = new SXRWorld(mainScene, false);
             mWorld.setGravity(0f, -9.81f, 0f);
-            mainScene.getRoot().attachComponent(mWorld);
-            // Include the following 3 lines for Bullet debug draw
-            SXRNode debugDraw = mWorld.setupDebugDraw();
-            mainScene.addNode(debugDraw);
             createFloor(sxrContext);
-            mWorld.setDebugMode(-1);
-
-            try
-            {
-                SXRPhysicsLoader loader = new SXRPhysicsLoader(sxrContext);
-                loader.getEventReceiver().addListener(mLoadHandler);
-                SXRAndroidResource res = new SXRAndroidResource(sxrContext, "r2d2.urdf");
-
-                loader.loadPhysics(res, false);
-            }
-            catch (IOException e)
-            {
-                e.printStackTrace();
-            }
         }
 
         void loadModel(SXRContext sxrContext, String fname) throws IOException {
@@ -233,25 +195,21 @@ public class MainActivity extends SXRActivity {
             box5.getTransform().setPosition(-4.5f, 5f, 10.5f);
             box5.setName("barrier");
             mainScene.addNode(box5);
+            createFloor(sxrContext);
 
             // This bullet file was created from a bullet application to add fixed and slider
             // constraints that are not available on Blender
-            try {
-                SXRPhysicsLoader loader = new SXRPhysicsLoader(sxrContext);
+            SXRPhysicsLoader loader = new SXRPhysicsLoader(sxrContext);
 
-                loader.loadPhysics(mainScene, "fixed_slider.bullet");
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            createFloor(sxrContext);
+            loader.loadPhysics(mainScene, "fixed_slider.bullet");
         }
 
         private SXRNode createFloor(SXRContext ctx)
         {
             SXRMaterial orangeMat = new SXRMaterial(ctx, SXRMaterial.SXRShaderType.Phong.ID);
             orangeMat.setDiffuseColor(0.7f, 0.3f, 0f, 1f);
-            SXRCubeNode floor = new SXRCubeNode(ctx, true, new Vector3f(50, 10, 50));
-            floor.getTransform().setPosition(0, -5, 0);
+            SXRCubeNode floor = new SXRCubeNode(ctx, true, new Vector3f(100, 10, 100));
+            floor.getTransform().setPosition(0, -15, 0);
             floor.getRenderData().setMaterial(orangeMat);
             floor.attachComponent(new SXRBoxCollider(ctx));
             ctx.getMainScene().addNode(floor);
