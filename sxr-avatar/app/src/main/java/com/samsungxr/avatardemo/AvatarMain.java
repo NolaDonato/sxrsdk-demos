@@ -25,6 +25,7 @@ import com.samsungxr.animation.SXRPoseMapper;
 import com.samsungxr.animation.keyframe.SXRSkeletonAnimation;
 import com.samsungxr.nodes.SXRCubeNode;
 import com.samsungxr.nodes.SXRSphereNode;
+import com.samsungxr.physics.PhysicsAVTConverter;
 import com.samsungxr.physics.SXRCollisionMatrix;
 import com.samsungxr.physics.SXRFixedConstraint;
 import com.samsungxr.physics.SXRPhysicsContent;
@@ -82,8 +83,8 @@ public class AvatarMain extends SXRMain
                 }
                 catch (IOException e) { }
 
-//                loadPhysics("female_caucasian_adult/FemaleBody.avt", mAvatarSkel);
-                loadPhysics("Test.avt", mAvatarSkel);
+                loadPhysics("female/FemaleBody.avt", mAvatarSkel);
+//                loadPhysics("/sdcard/AvatarFashion/physics/avatar.bullet", mAvatarSkel);
                 //loadNextAnimation(avatar, mBoneMap);
             }
         }
@@ -264,36 +265,48 @@ public class AvatarMain extends SXRMain
         }
     }
 
-    public void loadPhysics(String physicsFile, SXRSkeleton avatarSkel)
+    public void loadPhysics(String physicsFile, final SXRSkeleton avatarSkel)
     {
+        final PhysicsAVTConverter loader = new PhysicsAVTConverter(mContext);
+
+        loader.setMultiBody(true);
+        loader.getEventReceiver().addListener(new SXRPhysicsLoader.IPhysicsLoaderEvents()
+        {
+            @Override
+            public void onPhysicsLoaded(SXRPhysicsContent world, String filename)
+            {
+                SXRNode physicsRoot = world.getOwnerObject();
+                if ((physicsRoot != null) && (avatarSkel != null))
+                {
+                    List<SXRComponent> components = physicsRoot.getAllComponents(SXRSkeleton.getComponentType());
+
+                    if ((physicsRoot != null) && (avatarSkel != null) && (components.size() > 0))
+                    {
+                        mPhysicsSkel = (SXRSkeleton) components.get(0);
+                        mPhysicsSkel.disable();
+                        mPhysicsToAvatar = new SXRPoseMapper(avatarSkel, mPhysicsSkel, 100000);
+                    }
+                }
+                loader.exportPhysics((SXRWorld) world, "/storage/emulated/0/AvatarFashion/avatars/female_avatar.bullet");
+                if (world != mWorld)
+                {
+                    mWorld.merge(world);
+                }
+                loadHairPhysics("hair/myemojihair_Long25_Male.avt");
+            }
+
+            @Override
+            public void onLoadError(String filename, String errors)
+            {
+                Log.e(TAG, "Problem loading physics file " + filename + " " + errors);
+            }
+        });
         try
         {
-            SXRPhysicsLoader loader = new SXRPhysicsLoader(mContext);
-            SXRPhysicsContent physics = loader.loadAvatarFile(physicsFile, mWorld.isMultiBody());
-
-            if (physics == null)
-            {
-                return;
-            }
-            SXRNode physicsRoot = physics.getOwnerObject();
-            if ((physicsRoot != null) && (avatarSkel != null))
-            {
-                List<SXRComponent> components = physicsRoot.getAllComponents(SXRSkeleton.getComponentType());
-
-                if ((physicsRoot != null) && (avatarSkel != null) && (components.size() > 0))
-                {
-                    mPhysicsSkel = (SXRSkeleton) components.get(0);
-                    mPhysicsSkel.disable();
-                    mPhysicsToAvatar = new SXRPoseMapper(avatarSkel, mPhysicsSkel, 100000);
-                }
-            }
-            mWorld.merge(physics);
-            loadHairPhysics("hair/myemojihair_Long25_Male.avt");
+            SXRAndroidResource res = new SXRAndroidResource(mContext, physicsFile);
+            loader.loadPhysics(res, false);
         }
-        catch (IOException ex)
-        {
-            Log.e(TAG, "Problem loading physics file " + physicsFile + " " + ex.getMessage());
-        }
+        catch (IOException e) {  return; };
     }
 
     public void loadHairPhysics(String physicsFile)
@@ -302,28 +315,48 @@ public class AvatarMain extends SXRMain
         {
             return;
         }
-        try
+        final PhysicsAVTConverter loader = new PhysicsAVTConverter(mContext);
+        loader.setMultiBody(false);
+        loader.getEventReceiver().addListener(new SXRPhysicsLoader.IPhysicsLoaderEvents()
         {
-            SXRPhysicsLoader loader = new SXRPhysicsLoader(mContext);
-            SXRPhysicsContent physics = loader.loadAvatarFile(mPhysicsSkel, physicsFile, "head_JNT", mWorld.isMultiBody());
-            if (physics != null)
+            @Override
+            public void onPhysicsLoaded(final SXRPhysicsContent world, String filename)
             {
                 int attachIndex1 = mPhysicsSkel.getBoneIndex("head_JNT");
-                SXRNode attachNode1 = mPhysicsSkel.getBone(attachIndex1);
-                SXRNode attachNode2 = physics.getOwnerObject().getChildByIndex(0);
-                SXRSkeleton physicsSkel = (SXRSkeleton) attachNode2.getComponent(SXRSkeleton.getComponentType());
-                SXRPhysicsJoint attachJoint1 = (SXRPhysicsJoint) attachNode1.getComponent(SXRPhysicsJoint.getComponentType());
-                SXRFixedConstraint attachConstraint = new SXRFixedConstraint(mContext, attachJoint1);
+                final SXRNode attachNode2 = world.getOwnerObject().getChildByIndex(0);
+                final SXRSkeleton physicsSkel = (SXRSkeleton) attachNode2.getComponent(SXRSkeleton.getComponentType());
+                final SXRNode attachNode1 = mPhysicsSkel.getBone(attachIndex1);
 
-                mWorld.merge(physics);
-                mPhysicsSkel.merge(physicsSkel, "head_JNT");
-                attachNode2.attachComponent(attachConstraint);
+                if (mWorld != world)
+                {
+                    mWorld.merge(world);
+                    loader.exportPhysics((SXRWorld) world, "/storage/emulated/0/AvatarFashion/geometry/Hair/Hair_Long25/myemojihair_Long25_Male.bullet");
+                }
+                mWorld.run(new Runnable()
+                {
+                    public void run()
+                    {
+                        final SXRPhysicsJoint attachJoint1 = (SXRPhysicsJoint) attachNode1.getComponent(SXRPhysicsJoint.getComponentType());
+                        SXRFixedConstraint attachConstraint = new SXRFixedConstraint(mContext, attachJoint1);
+                        mPhysicsSkel.merge(physicsSkel, "head_JNT");
+                        attachNode2.attachComponent(attachConstraint);
+                    }
+                });
             }
-        }
-        catch (IOException ex)
+
+            @Override
+            public void onLoadError(String filename, String errors)
+            {
+                Log.e(TAG, "Problem loading physics file " + filename + " " + errors);
+            }
+        });
+        try
         {
-            Log.e(TAG, "Problem loading physics file " + physicsFile + " " + ex.getMessage());
+            SXRAndroidResource res = new SXRAndroidResource(mContext, physicsFile);
+            loader.loadPhysics(res, mPhysicsSkel, "head_JNT");
         }
+        catch (IOException e) {  return; };
+
     }
 
     @Override
