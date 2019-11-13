@@ -29,6 +29,7 @@ import com.samsungxr.SXRMaterial;
 import com.samsungxr.SXRMeshCollider;
 import com.samsungxr.SXRScene;
 import com.samsungxr.SXRNode;
+import com.samsungxr.animation.SXRSkeleton;
 import com.samsungxr.physics.SXRPhysicsContent;
 import com.samsungxr.physics.SXRPhysicsLoader;
 import com.samsungxr.physics.SXRRigidBody;
@@ -67,19 +68,29 @@ public class MainActivity extends SXRActivity {
         super.onCreate(savedInstance);
 
         setMain(new Main());
-        enableGestureDetector();
     }
 
     private final class Main extends SXRMain {
         private SXRWorld mWorld;
+        private SXRPhysicsLoader mPhysicsLoader;
+        private SXRPhysicsLoader.IPhysicsLoaderEvents mLoadHandler = new SXRPhysicsLoader.IPhysicsLoaderEvents()
+        {
+            @Override
+            public void onPhysicsLoaded(SXRPhysicsContent world, SXRSkeleton skel, String filename)
+            {
+                mWorld.enable();
+            }
 
+            @Override
+            public void onLoadError(SXRPhysicsContent world, String filename, String errors)
+            { }
+        };
         @Override
         public void onInit(SXRContext sxrContext) {
             initScene(sxrContext);
             initPhysics(sxrContext);
             loadBlenderAssets(sxrContext);
             complementScene(sxrContext);
-            mWorld.enable();
         }
 
         void initScene(SXRContext sxrContext) {
@@ -114,6 +125,7 @@ public class MainActivity extends SXRActivity {
             mWorld = new SXRWorld(mainScene, false);
             mWorld.setGravity(0f, -9.81f, 0f);
             createFloor(sxrContext);
+            mPhysicsLoader = new SXRPhysicsLoader(sxrContext);
         }
 
         void loadModel(SXRContext sxrContext, String fname) throws IOException {
@@ -148,8 +160,7 @@ public class MainActivity extends SXRActivity {
 
                 // Up-axis must be ignored because scene objects were rotated when exported
                 SXRAndroidResource r = new SXRAndroidResource(sxrContext, "scene3.bullet");
-                SXRPhysicsLoader loader = new SXRPhysicsLoader(sxrContext);
-                loader.loadPhysics(mainScene, r, false);
+                mPhysicsLoader.loadPhysics(mainScene, r, false);
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -199,9 +210,8 @@ public class MainActivity extends SXRActivity {
 
             // This bullet file was created from a bullet application to add fixed and slider
             // constraints that are not available on Blender
-            SXRPhysicsLoader loader = new SXRPhysicsLoader(sxrContext);
-
-            loader.loadPhysics(mainScene, "fixed_slider.bullet");
+            mPhysicsLoader.getEventReceiver().addListener(mLoadHandler);
+            mPhysicsLoader.loadPhysics(mainScene, "fixed_slider.bullet");
         }
 
         private SXRNode createFloor(SXRContext ctx)
@@ -216,16 +226,6 @@ public class MainActivity extends SXRActivity {
             SXRRigidBody floorRb = new SXRRigidBody(ctx, 0f);
             floor.attachComponent(floorRb);
             return floor;
-        }
-
-        @Override
-        public void onSingleTapUp(MotionEvent event)
-        {
-            // Include the following 3 lines for Bullet debug draw
-//            SXRNode debugDraw = mWorld.setupDebugDraw();
-//            mWorld.getSXRContext().getMainScene()/addNode(debugDraw);
-//            mWorld.setDebugMode(-1);
-            mWorld.setEnable(true);
         }
     }
 

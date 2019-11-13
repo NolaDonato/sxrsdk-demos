@@ -284,7 +284,7 @@ public class AvatarMain extends SXRMain
                     mPhysicsSkel.disable();
                     mPhysicsToAvatar = new SXRPoseMapper(avatarSkel, mPhysicsSkel, 100000);
                 }
-                loader.exportPhysics((SXRWorld) world, "/storage/emulated/0/AvatarFashion/avatars/female_avatar.bullet");
+//                loader.exportPhysics((SXRWorld) world, "/storage/emulated/0/AvatarFashion/avatars/female_avatar.bullet");
                 if (world != mWorld)
                 {
                     mWorld.getOwnerObject().addChildObject(physicsRoot);
@@ -294,7 +294,7 @@ public class AvatarMain extends SXRMain
             }
 
             @Override
-            public void onLoadError(String filename, String errors)
+            public void onLoadError(SXRPhysicsContent world, String filename, String errors)
             {
                 Log.e(TAG, "Problem loading physics file " + filename + " " + errors);
             }
@@ -321,45 +321,55 @@ public class AvatarMain extends SXRMain
             @Override
             public void onPhysicsLoaded(final SXRPhysicsContent world, final SXRSkeleton skel, String filename)
             {
-                loader.exportPhysics((SXRWorld) world, "/storage/emulated/0/AvatarFashion/geometry/Hair/Hair_Long25/myemojihair_Long25_Male.bullet");
+//                loader.exportPhysics((SXRWorld) world, "/storage/emulated/0/AvatarFashion/geometry/Hair/Hair_Long25/myemojihair_Long25_Male.bullet");
+                int attachIndex1 = mPhysicsSkel.getBoneIndex("head_JNT");
+                int attachIndex2 = skel.getBoneIndex("head_JNT");
+                final SXRNode attachNode1 = mPhysicsSkel.getBone(attachIndex1);
+                final SXRNode attachNode2 = skel.getBone(attachIndex2);
+                SXRPhysicsJoint attachJoint1 = (SXRPhysicsJoint) attachNode1.getComponent(SXRPhysicsJoint.getComponentType());
+                SXRPhysicsJoint attachJoint2 = (SXRPhysicsJoint) attachNode2.getComponent(SXRPhysicsJoint.getComponentType());
+
                 if (mWorld != world)
                 {
-                    int attachIndex1 = mPhysicsSkel.getBoneIndex("head_JNT");
-                    int attachIndex2 = skel.getBoneIndex("head_JNT");
-                    final SXRNode attachNode1 = mPhysicsSkel.getBone(attachIndex1);
-                    final SXRNode attachNode2 = skel.getBone(attachIndex2);
-                    SXRPhysicsJoint attachJoint1 = (SXRPhysicsJoint) attachNode1.getComponent(SXRPhysicsJoint.getComponentType());
-                    SXRPhysicsJoint attachJoint2 = (SXRPhysicsJoint) attachNode2.getComponent(SXRPhysicsJoint.getComponentType());
-
                     if ((attachJoint1 != null) && (attachJoint2 != null))
                     {
                         attachJoint1.merge(mPhysicsSkel, skel);
                         mWorld.merge(world);
                         return;
                     }
-                    SXRRigidBody attachBody1 = (SXRRigidBody) attachNode1.getComponent(SXRRigidBody.getComponentType());
-                    SXRRigidBody attachBody2 = (SXRRigidBody) attachNode2.getComponent(SXRRigidBody.getComponentType());
-                    final SXRPhysicsCollidable bodyA = (attachBody1 != null) ? attachBody1 : attachJoint1;
-                    final SXRPhysicsCollidable bodyB = (attachBody2 != null) ? attachBody2 : attachJoint2;
-                    if ((bodyA != null) && (bodyB != null))
+                    else
                     {
-                        mWorld.run(new Runnable()
+                        if (skel != null)
                         {
-                            @Override
-                            public void run()
-                            {
-                                mPhysicsSkel.merge(skel, "head_JNT");
-                                mWorld.merge(world);
-                                SXRFixedConstraint constraint = new SXRFixedConstraint(getSXRContext(), bodyB);
-                                attachNode1.attachComponent(constraint);
-                            }
-                        });
+                            mPhysicsSkel.merge(skel, "head_JNT");
+                        }
+                        mWorld.merge(world);
                     }
-                 }
+                }
+                if ((attachJoint1 != null) && (attachJoint2 != null))
+                {
+                    return;
+                }
+                SXRRigidBody attachBody1 = (SXRRigidBody) attachNode1.getComponent(SXRRigidBody.getComponentType());
+                SXRRigidBody attachBody2 = (SXRRigidBody) attachNode2.getComponent(SXRRigidBody.getComponentType());
+                final SXRPhysicsCollidable bodyA = (attachBody1 != null) ? attachBody1 : attachJoint1;
+                final SXRPhysicsCollidable bodyB = (attachBody2 != null) ? attachBody2 : attachJoint2;
+                if ((bodyA != null) && (bodyB != null))
+                {
+                    mWorld.run(new Runnable()
+                    {
+                        @Override
+                        public void run()
+                        {
+                            SXRFixedConstraint constraint = new SXRFixedConstraint(getSXRContext(), bodyB);
+                            attachNode1.attachComponent(constraint);
+                        }
+                    });
+                }
             }
 
             @Override
-            public void onLoadError(String filename, String errors)
+            public void onLoadError(SXRPhysicsContent world, String filename, String errors)
             {
                 Log.e(TAG, "Problem loading physics file " + filename + " " + errors);
             }
@@ -367,6 +377,7 @@ public class AvatarMain extends SXRMain
         try
         {
             SXRAndroidResource res = new SXRAndroidResource(mContext, physicsFile);
+            loader.setMultiBody(false);
             loader.loadPhysics(mWorld, res, mPhysicsSkel, "head_JNT");
 //            loader.loadPhysics(res, false);
         }
