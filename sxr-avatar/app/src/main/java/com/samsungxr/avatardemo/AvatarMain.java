@@ -271,7 +271,7 @@ public class AvatarMain extends SXRMain
     {
         final PhysicsAVTConverter loader = new PhysicsAVTConverter(mContext);
 
-        loader.setMultiBody(true);
+        loader.setMultiBody(false);
         loader.getEventReceiver().addListener(new SXRPhysicsLoader.IPhysicsLoaderEvents()
         {
             @Override
@@ -290,7 +290,7 @@ public class AvatarMain extends SXRMain
                     mWorld.getOwnerObject().addChildObject(physicsRoot);
                     mWorld.merge(world);
                 }
-                loadHairPhysics("hair/myemojihair_Long25_Male.avt");
+//                loadHairPhysics("hair/myemojihair_Long25_Male.avt");
             }
 
             @Override
@@ -334,6 +334,7 @@ public class AvatarMain extends SXRMain
                     if ((attachJoint1 != null) && (attachJoint2 != null))
                     {
                         attachJoint1.merge(mPhysicsSkel, skel);
+                        mPhysicsToAvatar = new SXRPoseMapper(mAvatarSkel, mPhysicsSkel, 100000);
                         mWorld.merge(world);
                         return;
                     }
@@ -342,19 +343,18 @@ public class AvatarMain extends SXRMain
                         if (skel != null)
                         {
                             mPhysicsSkel.merge(skel, "head_JNT");
+                            mPhysicsToAvatar = new SXRPoseMapper(mAvatarSkel, mPhysicsSkel, 100000);
                         }
                         mWorld.merge(world);
                     }
-                }
-                if ((attachJoint1 != null) && (attachJoint2 != null))
-                {
-                    return;
                 }
                 SXRRigidBody attachBody1 = (SXRRigidBody) attachNode1.getComponent(SXRRigidBody.getComponentType());
                 SXRRigidBody attachBody2 = (SXRRigidBody) attachNode2.getComponent(SXRRigidBody.getComponentType());
                 final SXRPhysicsCollidable bodyA = (attachBody1 != null) ? attachBody1 : attachJoint1;
                 final SXRPhysicsCollidable bodyB = (attachBody2 != null) ? attachBody2 : attachJoint2;
-                if ((bodyA != null) && (bodyB != null))
+
+                if ((bodyA != bodyB) &&
+                    ((bodyA != null) || (bodyB != null)))
                 {
                     mWorld.run(new Runnable()
                     {
@@ -377,7 +377,7 @@ public class AvatarMain extends SXRMain
         try
         {
             SXRAndroidResource res = new SXRAndroidResource(mContext, physicsFile);
-            loader.setMultiBody(false);
+            loader.setMultiBody(true);
             loader.loadPhysics(mWorld, res, mPhysicsSkel, "head_JNT");
 //            loader.loadPhysics(res, false);
         }
@@ -389,9 +389,9 @@ public class AvatarMain extends SXRMain
     public void onSingleTapUp(MotionEvent event)
     {
 // Include the following 3 lines for Bullet debug draw
-//        SXRNode debugDraw = mWorld.setupDebugDraw();
-//        mScene.addNode(debugDraw);
-//        mWorld.setDebugMode(-1);
+        SXRNode debugDraw = mWorld.setupDebugDraw();
+        mScene.addNode(debugDraw);
+        mWorld.setDebugMode(-1);
         mPhysicsSkel.enable();
         mWorld.setEnable(true);
     }
