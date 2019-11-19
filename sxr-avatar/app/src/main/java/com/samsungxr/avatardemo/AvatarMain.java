@@ -271,7 +271,7 @@ public class AvatarMain extends SXRMain
     {
         final PhysicsAVTConverter loader = new PhysicsAVTConverter(mContext);
 
-        loader.setMultiBody(false);
+        loader.setMultiBody(true);
         loader.getEventReceiver().addListener(new SXRPhysicsLoader.IPhysicsLoaderEvents()
         {
             @Override
@@ -290,7 +290,7 @@ public class AvatarMain extends SXRMain
                     mWorld.getOwnerObject().addChildObject(physicsRoot);
                     mWorld.merge(world);
                 }
-//                loadHairPhysics("hair/myemojihair_Long25_Male.avt");
+                loadHairPhysics("hair/myemojihair_Long25_Male.avt");
             }
 
             @Override
@@ -350,8 +350,8 @@ public class AvatarMain extends SXRMain
                 }
                 SXRRigidBody attachBody1 = (SXRRigidBody) attachNode1.getComponent(SXRRigidBody.getComponentType());
                 SXRRigidBody attachBody2 = (SXRRigidBody) attachNode2.getComponent(SXRRigidBody.getComponentType());
-                final SXRPhysicsCollidable bodyA = (attachBody1 != null) ? attachBody1 : attachJoint1;
-                final SXRPhysicsCollidable bodyB = (attachBody2 != null) ? attachBody2 : attachJoint2;
+                final SXRPhysicsCollidable bodyA = ((attachBody1 != attachBody2) && (attachBody1 != null)) ? attachBody1 : attachJoint1;
+                final SXRPhysicsCollidable bodyB = ((attachBody1 != attachBody2) && (attachBody2 != null))  ? attachBody2 : attachJoint2;
 
                 if ((bodyA != bodyB) &&
                     ((bodyA != null) || (bodyB != null)))
