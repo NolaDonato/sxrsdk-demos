@@ -1,6 +1,5 @@
 package com.samsungxr.avatardemo;
 
-import android.util.Log;
 import android.view.MotionEvent;
 
 import com.samsungxr.SXRActivity;
@@ -25,6 +24,7 @@ import com.samsungxr.animation.SXRPoseMapper;
 import com.samsungxr.animation.keyframe.SXRSkeletonAnimation;
 import com.samsungxr.nodes.SXRCubeNode;
 import com.samsungxr.nodes.SXRSphereNode;
+import com.samsungxr.physics.ICollisionEvents;
 import com.samsungxr.physics.PhysicsAVTConverter;
 import com.samsungxr.physics.SXRCollisionMatrix;
 import com.samsungxr.physics.SXRConstraint;
@@ -35,6 +35,7 @@ import com.samsungxr.physics.SXRPhysicsJoint;
 import com.samsungxr.physics.SXRPhysicsLoader;
 import com.samsungxr.physics.SXRRigidBody;
 import com.samsungxr.physics.SXRWorld;
+import com.samsungxr.utility.Log;
 
 import org.joml.Vector3f;
 
@@ -62,6 +63,7 @@ public class AvatarMain extends SXRMain
     private SXRSkeleton mAvatarSkel = null;
     private SXRPoseMapper mPhysicsToAvatar = null;
     private SXRSkeleton mPhysicsSkel = null;
+    private final int HAIR_COLLISION_GROUP = SXRCollisionMatrix.NEXT_COLLISION_GROUP;
 
     public AvatarMain(SXRActivity activity) {
         mActivity = activity;
@@ -85,7 +87,7 @@ public class AvatarMain extends SXRMain
                 }
                 catch (IOException e) { }
 
-                loadPhysics("female/FemaleBody.avt", mAvatarSkel);
+                loadPhysics("Test.avt", mAvatarSkel);
 //                loadPhysics("/sdcard/AvatarFashion/physics/avatar.bullet", mAvatarSkel);
                 //loadNextAnimation(avatar, mBoneMap);
             }
@@ -139,6 +141,7 @@ public class AvatarMain extends SXRMain
         rig.setNearClippingDistance(0.1f);
         rig.setFarClippingDistance(50);
         rig.getTransform().setPosition(0, 0.8f, 1.5f);
+        mScene.setFrustumCulling(false);
         mScene.addNode(mGeometryRoot);
         makeEnvironment(ctx, mScene);
         mScene.setFrustumCulling(false);
@@ -219,6 +222,7 @@ public class AvatarMain extends SXRMain
         floor.getRenderData().setMaterial(floorMtl);
         floor.getTransform().setPositionY(-5);
         floor.getRenderData().setCastShadows(false);
+        floor.setName("floor");
         skyBox.getRenderData().setCastShadows(false);
         skyBox.getTransform().setScale(20,  20, 20);
         skyMtl.setAmbientColor(0.1f, 0.25f, 0.25f, 1.0f);
@@ -240,8 +244,16 @@ public class AvatarMain extends SXRMain
         SXRCollisionMatrix cm = new SXRCollisionMatrix();
 
         cm.enableCollision(SXRCollisionMatrix.DEFAULT_GROUP, SXRCollisionMatrix.STATIC_GROUP);
+        cm.disableCollision(HAIR_COLLISION_GROUP, HAIR_COLLISION_GROUP);
+        cm.enableCollision(HAIR_COLLISION_GROUP, SXRCollisionMatrix.DEFAULT_GROUP);
 
         mWorld = new SXRWorld(mScene, cm, true);
+        // Include the following 3 lines for Bullet debug draw
+        SXRNode debugDraw = mWorld.setupDebugDraw();
+        mScene.addNode(debugDraw);
+        mWorld.setDebugMode(-1);
+
+        mWorld.getEventReceiver().addListener(mCollisionHandler);
         floor.attachCollider(floorCollider);
         floor.attachComponent(floorBody);
         return env;
@@ -267,11 +279,27 @@ public class AvatarMain extends SXRMain
         }
     }
 
+    ICollisionEvents mCollisionHandler = new ICollisionEvents() {
+        @Override
+        public void onEnter(SXRNode sceneObj0, SXRNode sceneObj1, float[] normal, float distance)
+        {
+            Log.e("BULLET", "Collision between %s and %s",
+                  sceneObj0.getName(), sceneObj1.getName());
+        }
+
+        @Override
+        public void onExit(SXRNode sceneObj0, SXRNode sceneObj1, float[] normal, float distance)
+        {
+
+        }
+    };
+
     public void loadPhysics(String physicsFile, final SXRSkeleton avatarSkel)
     {
         final PhysicsAVTConverter loader = new PhysicsAVTConverter(mContext);
 
-        loader.setMultiBody(true);
+        loader.setMultiBody(false);
+        loader.setDefaultSimType(SXRRigidBody.KINEMATIC);
         loader.getEventReceiver().addListener(new SXRPhysicsLoader.IPhysicsLoaderEvents()
         {
             @Override
@@ -281,8 +309,10 @@ public class AvatarMain extends SXRMain
                 if ((physicsRoot != null) && (avatarSkel != null) && (skel != null))
                 {
                     mPhysicsSkel = skel;
-                    mPhysicsSkel.disable();
+                    mPhysicsSkel.poseFromBones();
                     mPhysicsToAvatar = new SXRPoseMapper(avatarSkel, mPhysicsSkel, 100000);
+                    mPhysicsToAvatar.setBoneOptions(SXRSkeleton.BONE_PHYSICS);
+                    mPhysicsSkel.disable();
                 }
 //                loader.exportPhysics((SXRWorld) world, "/storage/emulated/0/AvatarFashion/avatars/female_avatar.bullet");
                 if (world != mWorld)
@@ -315,7 +345,10 @@ public class AvatarMain extends SXRMain
             return;
         }
         final PhysicsAVTConverter loader = new PhysicsAVTConverter(mContext);
-        loader.setMultiBody(true);
+        loader.setMultiBody(false);
+        loader.setDefaultSimType(SXRRigidBody.DYNAMIC);
+        loader.setCollisionGroup(HAIR_COLLISION_GROUP);
+
         loader.getEventReceiver().addListener(new SXRPhysicsLoader.IPhysicsLoaderEvents()
         {
             @Override
@@ -335,6 +368,7 @@ public class AvatarMain extends SXRMain
                     {
                         attachJoint1.merge(mPhysicsSkel, skel);
                         mPhysicsToAvatar = new SXRPoseMapper(mAvatarSkel, mPhysicsSkel, 100000);
+//                        mPhysicsToAvatar.setBoneOptions(SXRSkeleton.BONE_PHYSICS);
                         mWorld.merge(world);
                         return;
                     }
@@ -344,6 +378,7 @@ public class AvatarMain extends SXRMain
                         {
                             mPhysicsSkel.merge(skel, "head_JNT");
                             mPhysicsToAvatar = new SXRPoseMapper(mAvatarSkel, mPhysicsSkel, 100000);
+//                            mPhysicsToAvatar.setBoneOptions(SXRSkeleton.BONE_PHYSICS);
                         }
                         mWorld.merge(world);
                     }
@@ -377,7 +412,6 @@ public class AvatarMain extends SXRMain
         try
         {
             SXRAndroidResource res = new SXRAndroidResource(mContext, physicsFile);
-            loader.setMultiBody(true);
             loader.loadPhysics(mWorld, res, mPhysicsSkel, "head_JNT");
 //            loader.loadPhysics(res, false);
         }
@@ -388,12 +422,8 @@ public class AvatarMain extends SXRMain
     @Override
     public void onSingleTapUp(MotionEvent event)
     {
-// Include the following 3 lines for Bullet debug draw
-        SXRNode debugDraw = mWorld.setupDebugDraw();
-        mScene.addNode(debugDraw);
-        mWorld.setDebugMode(-1);
         mPhysicsSkel.enable();
-        mWorld.setEnable(true);
+        mWorld.setEnable(!mWorld.isEnabled());
     }
 
     @Override
