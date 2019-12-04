@@ -49,7 +49,7 @@ public class AvatarMain extends SXRMain
     //private final String[] mAnimationPaths =  { "YBot/Zombie_Stand_Up_mixamo.com.bvh", "YBot/Football_Hike_mixamo.com.bvh" };
     //private final String mBoneMapPath = "animation/mixamo/mixamo_map.txt";
     private final String mModelPath = "female/FemaleBody.gltf";
-    private final String[] mAnimationPaths =  { "animation/Motion_Body_HappyDance.bvh" };
+    private final String[] mAnimationPaths =  { "animations/Motion_Body_HappyDance.bvh" };
     private final String mBoneMapPath = "female/DMbonemap.txt";
     private static final String TAG = "AVATAR";
     private SXRContext mContext;
@@ -80,6 +80,7 @@ public class AvatarMain extends SXRMain
                 mGeometryRoot.addChildObject(avatarRoot);
                 mAvatarSkel = avatar.getSkeleton();
                 mAvatarSkel.poseToBones();
+                mAvatarSkel.disable();
                 try
                 {
                     String headDesc = readFile("female/FemaleHead.json");
@@ -89,7 +90,6 @@ public class AvatarMain extends SXRMain
 
                 loadPhysics("Test.avt", mAvatarSkel);
 //                loadPhysics("/sdcard/AvatarFashion/physics/avatar.bullet", mAvatarSkel);
-                //loadNextAnimation(avatar, mBoneMap);
             }
         }
 
@@ -101,6 +101,16 @@ public class AvatarMain extends SXRMain
             if (anim instanceof SXRSkeletonAnimation)
             {
                 ((SXRSkeletonAnimation) anim).scaleKeys(0.01f);
+            }
+            if (animation.getAnimationCount() > 1)
+            {
+                anim = animation.getAnimation(1);
+                if (anim instanceof SXRPoseMapper)
+                {
+                    SXRPoseMapper oldpm = (SXRPoseMapper) anim;
+                    SXRPoseMapper newpm = new SXRPoseMapper(mPhysicsSkel, oldpm.getSourceSkeleton(), anim.getDuration());
+                    animation.addAnimation(newpm);
+                }
             }
             animation.setRepeatMode(SXRRepeatMode.ONCE);
             animation.setSpeed(1f);
@@ -249,7 +259,7 @@ public class AvatarMain extends SXRMain
 
         mWorld = new SXRWorld(mScene, cm, true);
         // Include the following 3 lines for Bullet debug draw
-        SXRNode debugDraw = mWorld.setupDebugDraw();
+        SXRNode debugDraw = mWorld.setupDebugDraw(20000);
         mScene.addNode(debugDraw);
         mWorld.setDebugMode(-1);
 
@@ -313,6 +323,7 @@ public class AvatarMain extends SXRMain
                     mPhysicsToAvatar = new SXRPoseMapper(avatarSkel, mPhysicsSkel, 100000);
                     mPhysicsToAvatar.setBoneOptions(SXRSkeleton.BONE_PHYSICS);
                     mPhysicsSkel.disable();
+                    loadNextAnimation(mAvatar, mBoneMap);
                 }
 //                loader.exportPhysics((SXRWorld) world, "/storage/emulated/0/AvatarFashion/avatars/female_avatar.bullet");
                 if (world != mWorld)
@@ -320,7 +331,7 @@ public class AvatarMain extends SXRMain
                     mWorld.getOwnerObject().addChildObject(physicsRoot);
                     mWorld.merge(world);
                 }
-                loadHairPhysics("hair/myemojihair_Long25_Male.avt");
+ //               loadHairPhysics("hair/testhair.avt");
             }
 
             @Override
@@ -368,7 +379,7 @@ public class AvatarMain extends SXRMain
                     {
                         attachJoint1.merge(mPhysicsSkel, skel);
                         mPhysicsToAvatar = new SXRPoseMapper(mAvatarSkel, mPhysicsSkel, 100000);
-//                        mPhysicsToAvatar.setBoneOptions(SXRSkeleton.BONE_PHYSICS);
+                        mPhysicsToAvatar.setBoneOptions(SXRSkeleton.BONE_PHYSICS);
                         mWorld.merge(world);
                         return;
                     }
@@ -378,7 +389,6 @@ public class AvatarMain extends SXRMain
                         {
                             mPhysicsSkel.merge(skel, "head_JNT");
                             mPhysicsToAvatar = new SXRPoseMapper(mAvatarSkel, mPhysicsSkel, 100000);
-//                            mPhysicsToAvatar.setBoneOptions(SXRSkeleton.BONE_PHYSICS);
                         }
                         mWorld.merge(world);
                     }
@@ -422,6 +432,7 @@ public class AvatarMain extends SXRMain
     @Override
     public void onSingleTapUp(MotionEvent event)
     {
+        mAvatarSkel.enable();
         mPhysicsSkel.enable();
         mWorld.setEnable(!mWorld.isEnabled());
     }
