@@ -5,8 +5,7 @@ import android.view.MotionEvent;
 import com.samsungxr.SXRActivity;
 import com.samsungxr.SXRAndroidResource;
 import com.samsungxr.SXRBoxCollider;
-import com.samsungxr.SXRCameraRig;
-import com.samsungxr.SXRComponent;
+import com.samsungxr.SXRCameraRig;;
 import com.samsungxr.SXRContext;
 import com.samsungxr.SXRDirectLight;
 import com.samsungxr.SXRMain;
@@ -20,18 +19,13 @@ import com.samsungxr.animation.SXRAnimator;
 import com.samsungxr.animation.SXRAvatar;
 import com.samsungxr.animation.SXRRepeatMode;
 import com.samsungxr.animation.SXRSkeleton;
-import com.samsungxr.animation.SXRPoseMapper;
 import com.samsungxr.animation.keyframe.SXRSkeletonAnimation;
 import com.samsungxr.nodes.SXRCubeNode;
 import com.samsungxr.nodes.SXRSphereNode;
-import com.samsungxr.physics.ICollisionEvents;
 import com.samsungxr.physics.PhysicsAVTConverter;
+import com.samsungxr.physics.SXRAvatarPhysics;
 import com.samsungxr.physics.SXRCollisionMatrix;
-import com.samsungxr.physics.SXRConstraint;
-import com.samsungxr.physics.SXRFixedConstraint;
-import com.samsungxr.physics.SXRPhysicsCollidable;
 import com.samsungxr.physics.SXRPhysicsContent;
-import com.samsungxr.physics.SXRPhysicsJoint;
 import com.samsungxr.physics.SXRPhysicsLoader;
 import com.samsungxr.physics.SXRRigidBody;
 import com.samsungxr.physics.SXRWorld;
@@ -41,7 +35,8 @@ import org.joml.Vector3f;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
 public class AvatarMain extends SXRMain
 {
@@ -60,9 +55,7 @@ public class AvatarMain extends SXRMain
     private SXRWorld mWorld;
     private SXRNode mGeometryRoot;
     private SXRAvatar mAvatar;
-    private SXRSkeleton mAvatarSkel = null;
-    private SXRPoseMapper mPhysicsToAvatar = null;
-    private SXRSkeleton mPhysicsSkel = null;
+    private SXRAvatarPhysics mAvatarPhysics;
     private final int HAIR_COLLISION_GROUP = SXRCollisionMatrix.NEXT_COLLISION_GROUP;
 
     public AvatarMain(SXRActivity activity) {
@@ -74,17 +67,15 @@ public class AvatarMain extends SXRMain
         @Override
         public void onAvatarLoaded(final SXRAvatar avatar, final SXRNode avatarRoot, String filePath, String errors)
         {
-            mAvatar = avatar;
             if (avatarRoot.getParent() == null)
             {
                 mGeometryRoot.addChildObject(avatarRoot);
-                mAvatarSkel = avatar.getSkeleton();
-                mAvatarSkel.poseToBones();
-                mAvatarSkel.disable();
-                for (int i = 0; i < mAvatarSkel.getNumBones(); ++i)
+                SXRSkeleton skel = avatar.getSkeleton();
+                skel.poseToBones();
+                for (int i = 0; i < skel.getNumBones(); ++i)
                 {
-                    String name = mAvatarSkel.getBoneName(i);
-                    mAvatarSkel.setBoneOptions(i, name.startsWith("hair") ?
+                    String name = skel.getBoneName(i);
+                    skel.setBoneOptions(i, name.startsWith("hair") ?
                                                SXRSkeleton.BONE_PHYSICS : SXRSkeleton.BONE_ANIMATE);
                 }
                 try
@@ -93,12 +84,8 @@ public class AvatarMain extends SXRMain
                     avatar.loadModel(new SXRAndroidResource(mContext, "female/Head_Female.glb"), headDesc, "head_JNT");
                 }
                 catch (IOException e) { }
-
-                loadPhysics("Test.avt", mAvatarSkel);
-//                loadPhysics("/sdcard/AvatarFashion/physics/female_avatar.bullet", mAvatarSkel);
             }
         }
-
 
         @Override
         public void onAnimationLoaded(SXRAvatar avatar, SXRAnimator animation, String filePath, String errors)
@@ -107,20 +94,6 @@ public class AvatarMain extends SXRMain
             if (anim instanceof SXRSkeletonAnimation)
             {
                 ((SXRSkeletonAnimation) anim).scaleKeys(0.01f);
-            }
-            if (animation.getAnimationCount() > 1)
-            {
-                anim = animation.getAnimation(1);
-                if (anim instanceof SXRPoseMapper)
-                {
-                    SXRPoseMapper animToAvatar = (SXRPoseMapper) anim;
-                    SXRPoseMapper animToPhysics = new SXRPoseMapper(mPhysicsSkel, animToAvatar.getSourceSkeleton(), anim.getDuration());
-
-                    animToPhysics.setName(anim.getName() + ".ToPhysics");
-                    animToPhysics.setBoneOptions(SXRSkeleton.BONE_ANIMATE);
-                    animation.removeAnimation(animToAvatar);
-                    animation.addAnimation(animToPhysics);
-                }
             }
             animation.setRepeatMode(SXRRepeatMode.ONCE);
             animation.setSpeed(1f);
@@ -139,7 +112,13 @@ public class AvatarMain extends SXRMain
 
         public void onModelLoaded(SXRAvatar avatar, final SXRNode modelRoot, String filePath, String errors)
         {
-            if ((modelRoot == null) || "head".equals(avatar.findModelName(modelRoot)))
+            if (modelRoot == null)
+            {
+                loadHair("hair/myemojihair_Long25_Male.gltf");
+                return;
+            }
+            String modelName = avatar.findModelType(modelRoot);
+            if ("head".equals(modelName))
             {
                 loadHair("hair/myemojihair_Long25_Male.gltf");
             }
@@ -177,7 +156,13 @@ public class AvatarMain extends SXRMain
     {
         SXRAvatar avatar = new SXRAvatar(mContext, avatarFile);
         avatar.getEventReceiver().addListener(mAvatarListener);
+        Map<String, Object> physicsProps = new HashMap<String, Object>();
+
+        mAvatar = avatar;
         mBoneMap = readFile(mBoneMapPath);
+        mAvatarPhysics = new SXRAvatarPhysics(avatar, mWorld, new PhysicsAVTConverter(getSXRContext()));
+        physicsProps.put("SimulationType", SXRRigidBody.KINEMATIC);
+        mAvatarPhysics.setPhysicsProperties("female/FemaleBody.gltf", physicsProps);
 
         try
         {
@@ -193,6 +178,15 @@ public class AvatarMain extends SXRMain
 
     private void loadHair(String hairFile)
     {
+        final Map<String, Object> loaderProps = new HashMap<String, Object>();
+
+        loaderProps.put("AngularLimits", new Vector3f(0.1f, 0.1f, 0.1f));
+        loaderProps.put("AngularSpringStiffness", new Vector3f(0.55f, 0.55f, 0.55f));
+        loaderProps.put("AngularSpringDamping", new Vector3f(0.5f, 0.5f, 0.5f));
+        loaderProps.put("CollisionGroup" ,HAIR_COLLISION_GROUP);
+        loaderProps.put("SimulationType", SXRRigidBody.DYNAMIC);
+        mAvatarPhysics.setPhysicsProperties(hairFile.toLowerCase(), loaderProps);
+
         try
         {
             String hairDesc = readFile("hair/hair_long25.json");
@@ -264,16 +258,15 @@ public class AvatarMain extends SXRMain
         SXRCollisionMatrix cm = new SXRCollisionMatrix();
 
         cm.enableCollision(SXRCollisionMatrix.DEFAULT_GROUP, SXRCollisionMatrix.STATIC_GROUP);
-        cm.disableCollision(SXRCollisionMatrix.DEFAULT_GROUP, SXRCollisionMatrix.DEFAULT_GROUP);
-        cm.enableCollision(SXRCollisionMatrix.DEFAULT_GROUP, SXRCollisionMatrix.KINEMATIC_GROUP);
+        cm.disableCollision(HAIR_COLLISION_GROUP, HAIR_COLLISION_GROUP);
+        cm.enableCollision(HAIR_COLLISION_GROUP, SXRCollisionMatrix.KINEMATIC_GROUP);
 
         mWorld = new SXRWorld(mScene, cm, true);
         // Include the following 3 lines for Bullet debug draw
-//        SXRNode debugDraw = mWorld.setupDebugDraw(20000);
-//        mScene.addNode(debugDraw);
-//        mWorld.setDebugMode(-1);
+        SXRNode debugDraw = mWorld.setupDebugDraw(20000);
+        mScene.addNode(debugDraw);
+        mWorld.setDebugMode(-1);
 
-        mWorld.getEventReceiver().addListener(mCollisionHandler);
         floor.attachCollider(floorCollider);
         floor.attachComponent(floorBody);
         return env;
@@ -299,47 +292,25 @@ public class AvatarMain extends SXRMain
         }
     }
 
-    ICollisionEvents mCollisionHandler = new ICollisionEvents() {
-        @Override
-        public void onEnter(SXRNode sceneObj0, SXRNode sceneObj1, float[] normal, float distance)
-        {
-            Log.e("BULLET", "Collision between %s and %s",
-                  sceneObj0.getName(), sceneObj1.getName());
-        }
 
-        @Override
-        public void onExit(SXRNode sceneObj0, SXRNode sceneObj1, float[] normal, float distance)
-        {
-
-        }
-    };
-
-    public void loadPhysics(String physicsFile, final SXRSkeleton avatarSkel)
+    public void loadPhysics(String physicsFile)
     {
-        final PhysicsAVTConverter loader = new PhysicsAVTConverter(mContext);
+        final SXRPhysicsLoader loader = mAvatarPhysics.getPhysicsLoader();
+        Map<String, Object> loaderProps = new HashMap<String, Object>();
 
-        loader.setMultiBody(false);
-        loader.setDefaultSimType(SXRRigidBody.KINEMATIC);
+        loaderProps.put("SimulationType", SXRRigidBody.KINEMATIC);
         loader.getEventReceiver().addListener(new SXRPhysicsLoader.IPhysicsLoaderEvents()
         {
             @Override
             public void onPhysicsLoaded(SXRPhysicsContent world, SXRSkeleton skel, String filename)
             {
-                SXRNode physicsRoot = world.getOwnerObject();
-                if ((physicsRoot != null) && (avatarSkel != null) && (skel != null))
+                loader.getEventReceiver().removeListener(this);
+                if (mAvatar.hasModelType("head_JNT"))
                 {
-                    mPhysicsSkel = skel;
-                    mPhysicsSkel.poseFromBones();
-                    mPhysicsSkel.disable();
-                    loadNextAnimation(mAvatar, mBoneMap);
+//                    loader.exportPhysics((SXRWorld) world, "/storage/emulated/0/AvatarFashion/avatars/female_avatar.bullet");
+                      loadHairPhysics("hair/myemojihair_Long25_Male.avt");
                 }
-                loader.exportPhysics((SXRWorld) world, "/storage/emulated/0/AvatarFashion/avatars/female_avatar.bullet");
-                if (world != mWorld)
-                {
-                    mWorld.getOwnerObject().addChildObject(physicsRoot);
-                    mWorld.merge(world);
-                }
-                loadHairPhysics("hair/myemojihair_Long25_Male.avt");
+                loadNextAnimation(mAvatar, mBoneMap);
             }
 
             @Override
@@ -351,87 +322,26 @@ public class AvatarMain extends SXRMain
         try
         {
             SXRAndroidResource res = new SXRAndroidResource(mContext, physicsFile);
-            loader.loadPhysics(mWorld, res, false);
-//            loader.loadPhysics(res, false);
+            mAvatarPhysics.getPhysicsLoader().loadPhysics(res, null);
         }
         catch (IOException e) {  return; }
     }
 
     public void loadHairPhysics(String physicsFile)
     {
-        if (mPhysicsSkel == null)
-        {
-            return;
-        }
-        final PhysicsAVTConverter loader = new PhysicsAVTConverter(mContext);
+        final SXRPhysicsLoader loader = mAvatarPhysics.getPhysicsLoader();
+        final Map<String, Object> loaderProps = new HashMap<String, Object>();
         loader.setMultiBody(false);
-        loader.setAngularLimits(0.1f, 0.1f, 0.1f);
-        loader.setAngularSpringStiffness(0.55f, 0.55f, 0.55f);
-        loader.setAngularSpringDamping(0.5f, 0.5f, 0.5f);
-        loader.setCollisionGroup(SXRCollisionMatrix.KINEMATIC_GROUP);
-        loader.setDefaultSimType(SXRRigidBody.DYNAMIC);
+        loaderProps.put("AngularLimits", new Vector3f(0.1f, 0.1f, 0.1f));
+        loaderProps.put("AngularSpringStiffness", new Vector3f(0.55f, 0.55f, 0.55f));
+        loaderProps.put("AngularSpringDamping", new Vector3f(0.5f, 0.5f, 0.5f));
+        loaderProps.put("CollisionGroup" ,HAIR_COLLISION_GROUP);
+        loaderProps.put("SimulationType", SXRRigidBody.DYNAMIC);
 
-        loader.getEventReceiver().addListener(new SXRPhysicsLoader.IPhysicsLoaderEvents()
-        {
-            @Override
-            public void onPhysicsLoaded(final SXRPhysicsContent world, final SXRSkeleton skel, String filename)
-            {
-                loader.exportPhysics((SXRWorld) world, "/storage/emulated/0/AvatarFashion/geometry/Hair/Hair_Long25/myemojihair_Long25_Male.bullet");
-                int attachIndex1 = mPhysicsSkel.getBoneIndex("head_JNT");
-                int attachIndex2 = skel.getBoneIndex("head_JNT");
-                final SXRNode attachNode1 = mPhysicsSkel.getBone(attachIndex1);
-                final SXRNode attachNode2 = skel.getBone(attachIndex2);
-                SXRPhysicsJoint attachJoint1 = (SXRPhysicsJoint) attachNode1.getComponent(SXRPhysicsJoint.getComponentType());
-                SXRPhysicsJoint attachJoint2 = (SXRPhysicsJoint) attachNode2.getComponent(SXRPhysicsJoint.getComponentType());
-
-                if (mWorld != world)
-                {
-                    if ((attachJoint1 != null) && (attachJoint2 != null))
-                    {
-                        attachJoint1.merge(mPhysicsSkel, skel);
-                        mWorld.merge(world);
-                        return;
-                    }
-                    else
-                    {
-                        if (skel != null)
-                        {
-                            mPhysicsSkel.merge(skel, "head_JNT");
-                        }
-                        mWorld.merge(world);
-                    }
-                }
-                SXRRigidBody attachBody1 = (SXRRigidBody) attachNode1.getComponent(SXRRigidBody.getComponentType());
-                SXRRigidBody attachBody2 = (SXRRigidBody) attachNode2.getComponent(SXRRigidBody.getComponentType());
-                final SXRPhysicsCollidable bodyA = ((attachBody1 != attachBody2) && (attachBody1 != null)) ? attachBody1 : attachJoint1;
-                final SXRPhysicsCollidable bodyB = ((attachBody1 != attachBody2) && (attachBody2 != null))  ? attachBody2 : attachJoint2;
-
-                if ((bodyA != bodyB) &&
-                    ((bodyA != null) || (bodyB != null)))
-                {
-                    mWorld.run(new Runnable()
-                    {
-                        @Override
-                        public void run()
-                        {
-                            SXRFixedConstraint constraint = new SXRFixedConstraint(getSXRContext(), bodyB);
-                            attachNode1.attachComponent(constraint);
-                        }
-                    });
-                }
-            }
-
-            @Override
-            public void onLoadError(SXRPhysicsContent world, String filename, String errors)
-            {
-                Log.e(TAG, "Problem loading physics file " + filename + " " + errors);
-            }
-        });
         try
         {
             SXRAndroidResource res = new SXRAndroidResource(mContext, physicsFile);
-            loader.loadPhysics(mWorld, res, mPhysicsSkel, "head_JNT");
-//            loader.loadPhysics(res, false);
+            loader.loadPhysics(res, loaderProps);
         }
         catch (IOException e) {  return; };
 
@@ -440,33 +350,16 @@ public class AvatarMain extends SXRMain
     @Override
     public void onSingleTapUp(MotionEvent event)
     {
-        if ((mPhysicsSkel == null) ||
-            (mAvatarSkel == null))
+        if (mAvatarPhysics.isRunning())
         {
-            return;
+            mAvatarPhysics.stop();
         }
-        if (mPhysicsToAvatar == null)
+        else
         {
-            mPhysicsToAvatar = new SXRPoseMapper(mAvatarSkel, mPhysicsSkel, 100000);
-            mPhysicsToAvatar.setName("PhysicsToAvatar");
-            mAvatarSkel.enable();
-            mPhysicsSkel.enable();
+            mAvatarPhysics.start();
         }
-        mWorld.setEnable(!mWorld.isEnabled());
     }
 
-    @Override
-    public void onStep()
-    {
-        if (mPhysicsToAvatar != null)
-        {
-            if (mPhysicsSkel.isEnabled())
-            {
-                mPhysicsSkel.poseFromBones();
-                mPhysicsToAvatar.animate(0);
-            }
-        }
-    }
 
     private String readFile(String filePath)
     {

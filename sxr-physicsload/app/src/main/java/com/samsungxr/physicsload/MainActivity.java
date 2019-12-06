@@ -16,8 +16,6 @@
 package com.samsungxr.physicsload;
 
 import android.os.Bundle;
-import android.os.Environment;
-import android.view.MotionEvent;
 
 import com.samsungxr.SXRActivity;
 import com.samsungxr.SXRAndroidResource;
@@ -26,7 +24,6 @@ import com.samsungxr.SXRContext;
 import com.samsungxr.SXRDirectLight;
 import com.samsungxr.SXRMain;
 import com.samsungxr.SXRMaterial;
-import com.samsungxr.SXRMeshCollider;
 import com.samsungxr.SXRScene;
 import com.samsungxr.SXRNode;
 import com.samsungxr.animation.SXRSkeleton;
@@ -35,7 +32,6 @@ import com.samsungxr.physics.SXRPhysicsLoader;
 import com.samsungxr.physics.SXRRigidBody;
 import com.samsungxr.physics.SXRWorld;
 import com.samsungxr.nodes.SXRCubeNode;
-import com.samsungxr.utility.Log;
 
 import org.joml.Vector3f;
 

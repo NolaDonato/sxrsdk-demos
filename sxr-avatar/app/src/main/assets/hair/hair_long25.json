@@ -1,8 +1,12 @@
 {
-  "type" : "hyair",
+  "type" : "hair",
   "model" : "hair/myemojihair_Long25_Male.gltf",
   "avt" : "hair/myemojihair_Long25_Male.avt",
   "age" : "adult",
   "gender" : "female",
-  "attachbone" : "head_JNT"
+  "attachbone" : "head_JNT",
+  "angularspringdamping" : 0.5,
+  "angularspringstiffness" : 0.55,
+  "angularlimits" : 0.1,
+  "collisiongroup" : 6
 }
