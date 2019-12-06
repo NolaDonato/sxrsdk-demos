@@ -76,7 +76,7 @@ public class AvatarMain extends SXRMain
                 {
                     String name = skel.getBoneName(i);
                     skel.setBoneOptions(i, name.startsWith("hair") ?
-                                               SXRSkeleton.BONE_PHYSICS : SXRSkeleton.BONE_ANIMATE);
+                                           SXRSkeleton.BONE_PHYSICS : SXRSkeleton.BONE_ANIMATE);
                 }
                 try
                 {
@@ -112,21 +112,32 @@ public class AvatarMain extends SXRMain
 
         public void onModelLoaded(SXRAvatar avatar, final SXRNode modelRoot, String filePath, String errors)
         {
-            if (modelRoot == null)
-            {
-                loadHair("hair/myemojihair_Long25_Male.gltf");
-                return;
-            }
-            String modelName = avatar.findModelType(modelRoot);
-            if ("head".equals(modelName))
-            {
-                loadHair("hair/myemojihair_Long25_Male.gltf");
-            }
+
         }
 
         public void onAnimationFinished(SXRAvatar avatar, SXRAnimator animator) { }
 
         public void onAnimationStarted(SXRAvatar avatar, SXRAnimator animator) { }
+    };
+
+    private SXRPhysicsLoader.IPhysicsLoaderEvents mPhysicsListener = new SXRPhysicsLoader.IPhysicsLoaderEvents()
+    {
+        @Override
+        public void onPhysicsLoaded(SXRPhysicsContent world, SXRSkeleton skel, String filename)
+        {
+            if (!mAvatar.isRunning())
+            {
+                loadHair("hair/myemojihair_Long25_Male.gltf");
+                loadNextAnimation(mAvatar, mBoneMap);
+            }
+            mAvatarPhysics.getPhysicsLoader().getEventReceiver().removeListener(mPhysicsListener);
+        }
+
+        @Override
+        public void onLoadError(SXRPhysicsContent world, String filename, String errors)
+        {
+
+        }
     };
 
     @Override
@@ -155,15 +166,16 @@ public class AvatarMain extends SXRMain
     private void loadAvatar(String avatarFile)
     {
         SXRAvatar avatar = new SXRAvatar(mContext, avatarFile);
-        avatar.getEventReceiver().addListener(mAvatarListener);
         Map<String, Object> physicsProps = new HashMap<String, Object>();
 
         mAvatar = avatar;
+        avatar.getEventReceiver().addListener(mAvatarListener);
+        mAvatar.setProperty("avt", "Test.avt");
         mBoneMap = readFile(mBoneMapPath);
         mAvatarPhysics = new SXRAvatarPhysics(avatar, mWorld, new PhysicsAVTConverter(getSXRContext()));
         physicsProps.put("SimulationType", SXRRigidBody.KINEMATIC);
-        mAvatarPhysics.setPhysicsProperties("female/FemaleBody.gltf", physicsProps);
-
+        mAvatarPhysics.setPhysicsProperties("avatar", physicsProps);
+        mAvatarPhysics.getPhysicsLoader().getEventReceiver().addListener(mPhysicsListener);
         try
         {
             avatar.loadModel(new SXRAndroidResource(mContext, mModelPath));
@@ -178,15 +190,6 @@ public class AvatarMain extends SXRMain
 
     private void loadHair(String hairFile)
     {
-        final Map<String, Object> loaderProps = new HashMap<String, Object>();
-
-        loaderProps.put("AngularLimits", new Vector3f(0.1f, 0.1f, 0.1f));
-        loaderProps.put("AngularSpringStiffness", new Vector3f(0.55f, 0.55f, 0.55f));
-        loaderProps.put("AngularSpringDamping", new Vector3f(0.5f, 0.5f, 0.5f));
-        loaderProps.put("CollisionGroup" ,HAIR_COLLISION_GROUP);
-        loaderProps.put("SimulationType", SXRRigidBody.DYNAMIC);
-        mAvatarPhysics.setPhysicsProperties(hairFile.toLowerCase(), loaderProps);
-
         try
         {
             String hairDesc = readFile("hair/hair_long25.json");
@@ -290,61 +293,6 @@ public class AvatarMain extends SXRMain
             mActivity = null;
             Log.e(TAG, "Animation could not be loaded from " + mAnimationPaths[mNumAnimsLoaded]);
         }
-    }
-
-
-    public void loadPhysics(String physicsFile)
-    {
-        final SXRPhysicsLoader loader = mAvatarPhysics.getPhysicsLoader();
-        Map<String, Object> loaderProps = new HashMap<String, Object>();
-
-        loaderProps.put("SimulationType", SXRRigidBody.KINEMATIC);
-        loader.getEventReceiver().addListener(new SXRPhysicsLoader.IPhysicsLoaderEvents()
-        {
-            @Override
-            public void onPhysicsLoaded(SXRPhysicsContent world, SXRSkeleton skel, String filename)
-            {
-                loader.getEventReceiver().removeListener(this);
-                if (mAvatar.hasModelType("head_JNT"))
-                {
-//                    loader.exportPhysics((SXRWorld) world, "/storage/emulated/0/AvatarFashion/avatars/female_avatar.bullet");
-                      loadHairPhysics("hair/myemojihair_Long25_Male.avt");
-                }
-                loadNextAnimation(mAvatar, mBoneMap);
-            }
-
-            @Override
-            public void onLoadError(SXRPhysicsContent world, String filename, String errors)
-            {
-                Log.e(TAG, "Problem loading physics file " + filename + " " + errors);
-            }
-        });
-        try
-        {
-            SXRAndroidResource res = new SXRAndroidResource(mContext, physicsFile);
-            mAvatarPhysics.getPhysicsLoader().loadPhysics(res, null);
-        }
-        catch (IOException e) {  return; }
-    }
-
-    public void loadHairPhysics(String physicsFile)
-    {
-        final SXRPhysicsLoader loader = mAvatarPhysics.getPhysicsLoader();
-        final Map<String, Object> loaderProps = new HashMap<String, Object>();
-        loader.setMultiBody(false);
-        loaderProps.put("AngularLimits", new Vector3f(0.1f, 0.1f, 0.1f));
-        loaderProps.put("AngularSpringStiffness", new Vector3f(0.55f, 0.55f, 0.55f));
-        loaderProps.put("AngularSpringDamping", new Vector3f(0.5f, 0.5f, 0.5f));
-        loaderProps.put("CollisionGroup" ,HAIR_COLLISION_GROUP);
-        loaderProps.put("SimulationType", SXRRigidBody.DYNAMIC);
-
-        try
-        {
-            SXRAndroidResource res = new SXRAndroidResource(mContext, physicsFile);
-            loader.loadPhysics(res, loaderProps);
-        }
-        catch (IOException e) {  return; };
-
     }
 
     @Override
