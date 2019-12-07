@@ -71,12 +71,15 @@ public class AvatarMain extends SXRMain
             {
                 mGeometryRoot.addChildObject(avatarRoot);
                 SXRSkeleton skel = avatar.getSkeleton();
-                skel.poseToBones();
-                for (int i = 0; i < skel.getNumBones(); ++i)
+                synchronized (skel)
                 {
-                    String name = skel.getBoneName(i);
-                    skel.setBoneOptions(i, name.startsWith("hair") ?
-                                           SXRSkeleton.BONE_PHYSICS : SXRSkeleton.BONE_ANIMATE);
+                    skel.poseToBones();
+                    for (int i = 0; i < skel.getNumBones(); ++i)
+                    {
+                        String name = skel.getBoneName(i);
+                        skel.setBoneOptions(i, name.startsWith("hair") ?
+                            SXRSkeleton.BONE_PHYSICS : SXRSkeleton.BONE_ANIMATE);
+                    }
                 }
                 try
                 {
@@ -112,7 +115,23 @@ public class AvatarMain extends SXRMain
 
         public void onModelLoaded(SXRAvatar avatar, final SXRNode modelRoot, String filePath, String errors)
         {
+            String modelType = avatar.findModelType(modelRoot);
 
+            if ("hair".equals(modelType))
+            {
+                SXRSkeleton skel = avatar.getSkeleton();
+                synchronized (skel)
+                {
+                    for (int i = 0; i < skel.getNumBones(); ++i)
+                    {
+                        String name = skel.getBoneName(i);
+                        if (name.startsWith("hair"))
+                        {
+                            skel.setBoneOptions(i, SXRSkeleton.BONE_PHYSICS);
+                        }
+                    }
+                }
+            }
         }
 
         public void onAnimationFinished(SXRAvatar avatar, SXRAnimator animator) { }
@@ -174,7 +193,7 @@ public class AvatarMain extends SXRMain
         mBoneMap = readFile(mBoneMapPath);
         mAvatarPhysics = new SXRAvatarPhysics(avatar, mWorld, new PhysicsAVTConverter(getSXRContext()));
         physicsProps.put("SimulationType", SXRRigidBody.KINEMATIC);
-        mAvatarPhysics.setPhysicsProperties("avatar", physicsProps);
+        mAvatarPhysics.setPhysicsProperties("test.avt", physicsProps);
         mAvatarPhysics.getPhysicsLoader().getEventReceiver().addListener(mPhysicsListener);
         try
         {
