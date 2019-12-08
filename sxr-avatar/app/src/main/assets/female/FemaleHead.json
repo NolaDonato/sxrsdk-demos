@@ -1,4 +1,5 @@
 {
-"type" : "head",
-"model" : "female/Head_Female.glb"
+  "type" : "head",
+  "name" : "femalehead",
+  "model" : "female/Head_Female.glb"
 }

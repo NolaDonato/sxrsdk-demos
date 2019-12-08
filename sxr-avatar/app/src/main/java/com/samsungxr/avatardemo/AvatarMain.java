@@ -32,6 +32,8 @@ import com.samsungxr.physics.SXRWorld;
 import com.samsungxr.utility.Log;
 
 import org.joml.Vector3f;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -43,9 +45,9 @@ public class AvatarMain extends SXRMain
 //    private final String mModelPath = "YBot/ybot.fbx";
     //private final String[] mAnimationPaths =  { "YBot/Zombie_Stand_Up_mixamo.com.bvh", "YBot/Football_Hike_mixamo.com.bvh" };
     //private final String mBoneMapPath = "animation/mixamo/mixamo_map.txt";
-    private final String mModelPath = "female/FemaleBody.gltf";
+    private final String mAvatarDesc = "female/FemaleBody.json";
+    private final String mHairDesc = "hair/hair_long25.json";
     private final String[] mAnimationPaths =  { "animations/Motion_Body_HappyDance.bvh" };
-    private final String mBoneMapPath = "female/DMbonemap.txt";
     private static final String TAG = "AVATAR";
     private SXRContext mContext;
     private SXRScene mScene;
@@ -69,8 +71,14 @@ public class AvatarMain extends SXRMain
         {
             if (avatarRoot.getParent() == null)
             {
-                mGeometryRoot.addChildObject(avatarRoot);
                 SXRSkeleton skel = avatar.getSkeleton();
+
+                mGeometryRoot.addChildObject(avatarRoot);
+                mBoneMap = avatar.getProperty("bonemap");
+                if (mBoneMap != null)
+                {
+                    mBoneMap = readFile(mBoneMap);
+                }
                 synchronized (skel)
                 {
                     skel.poseToBones();
@@ -146,7 +154,7 @@ public class AvatarMain extends SXRMain
         {
             if (!mAvatar.isRunning())
             {
-                loadHair("hair/myemojihair_Long25_Male.gltf");
+                loadHair(mHairDesc);
                 loadNextAnimation(mAvatar, mBoneMap);
             }
             mAvatarPhysics.getPhysicsLoader().getEventReceiver().removeListener(mPhysicsListener);
@@ -179,43 +187,45 @@ public class AvatarMain extends SXRMain
 
     public void onAfterInit()
     {
-        loadAvatar("female/FemaleBody.gltf");
+        loadAvatar(mAvatarDesc);
     }
 
-    private void loadAvatar(String avatarFile)
+    private void loadAvatar(String avatarDescPath)
     {
-        SXRAvatar avatar = new SXRAvatar(mContext, avatarFile);
-        Map<String, Object> physicsProps = new HashMap<String, Object>();
-
-        mAvatar = avatar;
-        avatar.getEventReceiver().addListener(mAvatarListener);
-        mAvatar.setProperty("avt", "Test.avt");
-        mBoneMap = readFile(mBoneMapPath);
-        mAvatarPhysics = new SXRAvatarPhysics(avatar, mWorld, new PhysicsAVTConverter(getSXRContext()));
-        physicsProps.put("SimulationType", SXRRigidBody.KINEMATIC);
-        mAvatarPhysics.setPhysicsProperties("test.avt", physicsProps);
-        mAvatarPhysics.getPhysicsLoader().getEventReceiver().addListener(mPhysicsListener);
         try
         {
-            avatar.loadModel(new SXRAndroidResource(mContext, mModelPath));
+            String desc = readFile(avatarDescPath);
+            JSONObject avatarDesc = new JSONObject(desc);
+            SXRAvatar avatar = new SXRAvatar(mContext, avatarDesc.getString("name"));
+            String bonemap = avatarDesc.getString("bonemap");
+            String modelFile = avatarDesc.getString("model");
+
+            mAvatar = avatar;
+            avatar.getEventReceiver().addListener(mAvatarListener);
+            mBoneMap = readFile(bonemap);
+            mAvatarPhysics = new SXRAvatarPhysics(avatar, mWorld, new PhysicsAVTConverter(getSXRContext()));
+            mAvatarPhysics.getPhysicsLoader().getEventReceiver().addListener(mPhysicsListener);
+            avatar.loadModel(new SXRAndroidResource(mContext, modelFile), desc);
         }
-        catch (IOException e)
+        catch (IOException | JSONException e)
         {
-            e.printStackTrace();
+            Log.e(TAG, "Cannot read avatar decription file " + avatarDescPath);
             mActivity.finish();
             mActivity = null;
         }
     }
 
-    private void loadHair(String hairFile)
+    private void loadHair(String hairDescPath)
     {
         try
         {
-            String hairDesc = readFile("hair/hair_long25.json");
+            String hairDesc = readFile(hairDescPath);
+            JSONObject jsonDesc = new JSONObject(hairDesc);
+            String modelFile = jsonDesc.getString("model");
 
-            mAvatar.loadModel(new SXRAndroidResource(mContext, hairFile), hairDesc, "hair");
+            mAvatar.loadModel(new SXRAndroidResource(mContext, modelFile), hairDesc, "hair");
         }
-        catch (IOException e)
+        catch (IOException | JSONException e)
         {
             e.printStackTrace();
             mActivity.finish();
@@ -285,9 +295,9 @@ public class AvatarMain extends SXRMain
 
         mWorld = new SXRWorld(mScene, cm, true);
         // Include the following 3 lines for Bullet debug draw
-        SXRNode debugDraw = mWorld.setupDebugDraw(20000);
-        mScene.addNode(debugDraw);
-        mWorld.setDebugMode(-1);
+//        SXRNode debugDraw = mWorld.setupDebugDraw(20000);
+//        mScene.addNode(debugDraw);
+//        mWorld.setDebugMode(-1);
 
         floor.attachCollider(floorCollider);
         floor.attachComponent(floorBody);

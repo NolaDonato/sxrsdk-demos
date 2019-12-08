@@ -1,6 +1,10 @@
 {
-"type" : "avatar",
-"model" : "female/Body_Female.gltf",
-"avt" : "female/FemaleBody.avt",
-"targetmap" : "female/FemaleBody.tgtMap"
+  "name" : "femalebody",
+  "gender" : "female",
+  "type" : "avatar",
+  "model" : "female/FemaleBody.gltf",
+  "avt" : "Test.avt",
+  "targetmap" : "female/FemaleBody.tgtMap",
+  "bonemap" : "female/DMbonemap.txt",
+  "simulationtype" : 2
 }
