@@ -156,7 +156,7 @@ public class MainActivity extends SXRActivity {
 
                 // Up-axis must be ignored because scene objects were rotated when exported
                 SXRAndroidResource r = new SXRAndroidResource(sxrContext, "scene3.bullet");
-                mPhysicsLoader.loadPhysics(mainScene, r, false);
+                mPhysicsLoader.loadPhysics(mainScene, r, null);
             } catch (Exception e) {
                 e.printStackTrace();
             }

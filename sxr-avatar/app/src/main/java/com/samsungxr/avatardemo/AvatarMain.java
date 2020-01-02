@@ -89,12 +89,6 @@ public class AvatarMain extends SXRMain
                             SXRSkeleton.BONE_PHYSICS : SXRSkeleton.BONE_ANIMATE);
                     }
                 }
-                try
-                {
-                    String headDesc = readFile("female/FemaleHead.json");
-                    avatar.loadModel(new SXRAndroidResource(mContext, "female/Head_Female.glb"), headDesc, "head_JNT");
-                }
-                catch (IOException e) { }
             }
         }
 
@@ -177,7 +171,7 @@ public class AvatarMain extends SXRMain
         SXRCameraRig rig = mScene.getMainCameraRig();
         rig.setNearClippingDistance(0.1f);
         rig.setFarClippingDistance(50);
-        rig.getTransform().setPosition(0, 0.8f, 1.5f);
+        rig.getTransform().setPosition(0, 0.8f, 1);
         mScene.setFrustumCulling(false);
         mScene.addNode(mGeometryRoot);
         makeEnvironment(ctx, mScene);
