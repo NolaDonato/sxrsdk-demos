@@ -3,7 +3,8 @@
   "gender" : "female",
   "type" : "avatar",
   "model" : "female/FemaleBody.gltf",
-  "avt" : "Test.avt",
+  "avt" : "female/FemaleBody.avt",
+  "physics" : "female/FemaleBody.urdf",
   "targetmap" : "female/FemaleBody.tgtMap",
   "bonemap" : "female/DMbonemap.txt",
   "simulationtype" : 2

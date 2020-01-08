@@ -1,0 +1,658 @@
+<robot name = "myemojihair_Long29_Male">
+<link name="hips_JNT">
+   <interial>
+       <mass value="12.0" />
+   </interial>
+    <collision>
+        <geometry>
+            <cylinder radius="0.075000" length="0.225000" />
+        </geometry>
+    </collision>
+</link>
+<link name="l_upleg_JNT">
+   <interial>
+       <mass value="7.0" />
+   </interial>
+    <collision>
+        <geometry>
+            <cylinder radius="0.160000" length="0.480000" />
+        </geometry>
+    </collision>
+</link>
+<joint name="joint_l_upleg_JNT" type="floating" >
+    <parent link="hips_JNT" />
+    <child link="l_upleg_JNT" />
+    <dynamics friction="0.000000" damping="0.040000" />
+    <origin xyz="0.081457 -0.208145 0.002232" rpy="0.000000 0.000000 -0.000000" />
+</joint>
+<link name="l_leg_JNT">
+   <interial>
+       <mass value="4.0" />
+   </interial>
+    <collision>
+        <geometry>
+            <cylinder radius="0.185000" length="0.555000" />
+        </geometry>
+    </collision>
+</link>
+<joint name="joint_l_leg_JNT" type="revolute" >
+    <parent link="l_upleg_JNT" />
+    <child link="l_leg_JNT" />
+    <dynamics friction="0.000000" damping="0.040000" />
+    <origin xyz="0.002832 -0.384417 -0.010570" rpy="0.000000 0.000000 -0.000000" />
+    <limit lower="0.000000" upper="2.268928" />
+    <axis xyz="1.000000 0.000000 0.000000" />
+</joint>
+<link name="l_foot_JNT">
+   <interial>
+       <mass value="2.0" />
+   </interial>
+    <collision>
+        <geometry>
+            <cylinder radius="0.040000" length="0.120000" />
+        </geometry>
+    </collision>
+</link>
+<joint name="joint_l_foot_JNT" type="floating" >
+    <parent link="l_leg_JNT" />
+    <child link="l_foot_JNT" />
+    <dynamics friction="0.000000" damping="0.040000" />
+    <origin xyz="0.001447 -0.216052 0.046643" rpy="0.000000 0.000000 -0.000000" />
+</joint>
+<link name="l_toebase_JNT">
+   <interial>
+       <mass value="1.0" />
+   </interial>
+    <collision>
+        <geometry>
+            <cylinder radius="0.020000" length="0.060000" />
+        </geometry>
+    </collision>
+</link>
+<joint name="joint_l_toebase_JNT" type="revolute" >
+    <parent link="l_foot_JNT" />
+    <child link="l_toebase_JNT" />
+    <dynamics friction="0.000000" damping="0.040000" />
+    <origin xyz="0.000098 -0.032490 0.059404" rpy="0.000000 0.000000 -0.000000" />
+    <limit lower="-3.141593" upper="3.141593" />
+    <axis xyz="1.000000 0.000000 0.000000" />
+</joint>
+<link name="spine_JNT">
+   <interial>
+       <mass value="15.0" />
+   </interial>
+    <collision>
+        <geometry>
+            <cylinder radius="0.160000" length="0.480000" />
+        </geometry>
+    </collision>
+</link>
+<joint name="joint_spine_JNT" type="floating" >
+    <parent link="hips_JNT" />
+    <child link="spine_JNT" />
+    <dynamics friction="0.000000" damping="0.040000" />
+    <origin xyz="0.000123 0.036636 -0.000207" rpy="0.000000 0.000000 -0.000000" />
+</joint>
+<link name="spine2_JNT">
+   <interial>
+       <mass value="15.0" />
+   </interial>
+    <collision>
+        <geometry>
+            <cylinder radius="0.085000" length="0.255000" />
+        </geometry>
+    </collision>
+</link>
+<joint name="joint_spine2_JNT" type="floating" >
+    <parent link="spine_JNT" />
+    <child link="spine2_JNT" />
+    <dynamics friction="0.000000" damping="0.040000" />
+    <origin xyz="0.000124 0.295181 -0.022932" rpy="0.000000 0.000000 -0.000000" />
+</joint>
+<link name="l_shoulder_JNT">
+   <interial>
+       <mass value="3.0" />
+   </interial>
+    <collision>
+        <geometry>
+            <cylinder radius="0.060000" length="0.180000" />
+        </geometry>
+    </collision>
+</link>
+<joint name="joint_l_shoulder_JNT" type="fixed" >
+    <parent link="spine2_JNT" />
+    <child link="l_shoulder_JNT" />
+    <dynamics friction="0.000000" damping="0.040000" />
+    <origin xyz="0.085153 0.058688 -0.018444" rpy="0.000000 0.000000 -0.000000" />
+</joint>
+<link name="l_arm_JNT">
+   <interial>
+       <mass value="3.0" />
+   </interial>
+    <collision>
+        <geometry>
+            <cylinder radius="0.040000" length="0.120000" />
+        </geometry>
+    </collision>
+</link>
+<joint name="joint_l_arm_JNT" type="floating" >
+    <parent link="l_shoulder_JNT" />
+    <child link="l_arm_JNT" />
+    <dynamics friction="0.000000" damping="0.040000" />
+    <origin xyz="0.190469 0.002851 -0.001221" rpy="0.000000 0.000000 -0.000000" />
+</joint>
+<link name="l_forearm_JNT">
+   <interial>
+       <mass value="2.5" />
+   </interial>
+    <collision>
+        <geometry>
+            <cylinder radius="0.030000" length="0.090000" />
+        </geometry>
+    </collision>
+</link>
+<joint name="joint_l_forearm_JNT" type="revolute" >
+    <parent link="l_arm_JNT" />
+    <child link="l_forearm_JNT" />
+    <dynamics friction="0.000000" damping="0.040000" />
+    <origin xyz="0.240328 -0.000001 0.018851" rpy="0.000000 0.000000 -0.000000" />
+    <limit lower="-2.268928" upper="0.000000" />
+    <axis xyz="0.000000 1.000000 0.000000" />
+</joint>
+<link name="l_hand_JNT">
+   <interial>
+       <mass value="1.0" />
+   </interial>
+    <collision>
+        <geometry>
+            <cylinder radius="0.035000" length="0.105000" />
+        </geometry>
+    </collision>
+</link>
+<joint name="joint_l_hand_JNT" type="floating" >
+    <parent link="l_forearm_JNT" />
+    <child link="l_hand_JNT" />
+    <dynamics friction="0.000000" damping="0.040000" />
+    <origin xyz="0.145913 -0.006082 0.025126" rpy="0.000000 0.000000 -0.000000" />
+</joint>
+<link name="neck_JNT">
+   <interial>
+       <mass value="1.0" />
+   </interial>
+    <collision>
+        <geometry>
+           <box size="0.086617 0.086617 0.086617" />
+        </geometry>
+    </collision>
+</link>
+<joint name="joint_neck_JNT" type="floating" >
+    <parent link="spine2_JNT" />
+    <child link="neck_JNT" />
+    <dynamics friction="1.000000" damping="0.040000" />
+    <origin xyz="-0.000132 0.148075 -0.002603" rpy="0.000000 0.000000 -0.000000" />
+</joint>
+<link name="head_JNT">
+   <interial>
+       <mass value="5.0" />
+   </interial>
+    <collision>
+        <geometry>
+            <cylinder radius="0.171667" length="0.591296" />
+        </geometry>
+    </collision>
+</link>
+<link name="hair_01_JNT">
+   <interial>
+       <mass value="0.01" />
+   </interial>
+    <collision>
+        <geometry>
+           <box size="1.000000 1.000000 1.000000" />
+        </geometry>
+    </collision>
+</link>
+<joint name="joint_hair_01_JNT" type="floating" >
+    <parent link="head_JNT" />
+    <child link="hair_01_JNT" />
+    <dynamics friction="0.000000" damping="0.040000" />
+    <origin xyz="0.000000 0.000000 0.000000" rpy="0.000000 0.000000 -0.000000" />
+</joint>
+<link name="hair_01_01_JNT">
+   <interial>
+       <mass value="0.01" />
+   </interial>
+    <collision>
+        <geometry>
+           <box size="0.059286 0.059286 0.059286" />
+        </geometry>
+    </collision>
+</link>
+<joint name="joint_hair_01_01_JNT" type="floating" >
+    <parent link="hair_01_JNT" />
+    <child link="hair_01_01_JNT" />
+    <dynamics friction="0.000000" damping="0.040000" />
+    <origin xyz="0.000000 0.000000 0.000000" rpy="0.000000 0.000000 -0.000000" />
+</joint>
+<link name="hair_01_02_JNT">
+   <interial>
+       <mass value="0.01" />
+   </interial>
+    <collision>
+        <geometry>
+           <box size="0.066945 0.066945 0.066945" />
+        </geometry>
+    </collision>
+</link>
+<joint name="joint_hair_01_02_JNT" type="floating" >
+    <parent link="hair_01_01_JNT" />
+    <child link="hair_01_02_JNT" />
+    <dynamics friction="0.000000" damping="0.040000" />
+    <origin xyz="0.000000 0.000000 0.000000" rpy="0.000000 0.000000 -0.000000" />
+</joint>
+<link name="hair_02_JNT">
+   <interial>
+       <mass value="0.01" />
+   </interial>
+    <collision>
+        <geometry>
+           <box size="0.065588 0.065588 0.065588" />
+        </geometry>
+    </collision>
+</link>
+<joint name="joint_hair_02_JNT" type="floating" >
+    <parent link="head_JNT" />
+    <child link="hair_02_JNT" />
+    <dynamics friction="0.000000" damping="0.040000" />
+    <origin xyz="0.000000 0.000000 0.000000" rpy="0.000000 0.000000 -0.000000" />
+</joint>
+<link name="hair_02_01_JNT">
+   <interial>
+       <mass value="0.01" />
+   </interial>
+    <collision>
+        <geometry>
+           <box size="0.071958 0.071958 0.071958" />
+        </geometry>
+    </collision>
+</link>
+<joint name="joint_hair_02_01_JNT" type="floating" >
+    <parent link="hair_02_JNT" />
+    <child link="hair_02_01_JNT" />
+    <dynamics friction="0.000000" damping="0.040000" />
+    <origin xyz="0.000000 0.000000 0.000000" rpy="0.000000 0.000000 -0.000000" />
+</joint>
+<link name="hair_02_02_JNT">
+   <interial>
+       <mass value="0.01" />
+   </interial>
+    <collision>
+        <geometry>
+           <box size="0.050429 0.050429 0.050429" />
+        </geometry>
+    </collision>
+</link>
+<joint name="joint_hair_02_02_JNT" type="floating" >
+    <parent link="hair_02_01_JNT" />
+    <child link="hair_02_02_JNT" />
+    <dynamics friction="0.000000" damping="0.040000" />
+    <origin xyz="0.000000 0.000000 0.000000" rpy="0.000000 0.000000 -0.000000" />
+</joint>
+<link name="hair_03_JNT">
+   <interial>
+       <mass value="0.01" />
+   </interial>
+    <collision>
+        <geometry>
+           <box size="0.065588 0.065588 0.065588" />
+        </geometry>
+    </collision>
+</link>
+<joint name="joint_hair_03_JNT" type="floating" >
+    <parent link="head_JNT" />
+    <child link="hair_03_JNT" />
+    <dynamics friction="0.000000" damping="0.040000" />
+    <origin xyz="0.000000 0.000000 0.000000" rpy="0.000000 0.000000 -0.000000" />
+</joint>
+<link name="hair_03_01_JNT">
+   <interial>
+       <mass value="0.01" />
+   </interial>
+    <collision>
+        <geometry>
+           <box size="0.070175 0.070175 0.070175" />
+        </geometry>
+    </collision>
+</link>
+<joint name="joint_hair_03_01_JNT" type="floating" >
+    <parent link="hair_03_JNT" />
+    <child link="hair_03_01_JNT" />
+    <dynamics friction="0.000000" damping="0.040000" />
+    <origin xyz="0.000000 0.000000 0.000000" rpy="0.000000 0.000000 -0.000000" />
+</joint>
+<link name="hair_03_02_JNT">
+   <interial>
+       <mass value="0.01" />
+   </interial>
+    <collision>
+        <geometry>
+           <box size="0.051662 0.051662 0.051662" />
+        </geometry>
+    </collision>
+</link>
+<joint name="joint_hair_03_02_JNT" type="floating" >
+    <parent link="hair_03_01_JNT" />
+    <child link="hair_03_02_JNT" />
+    <dynamics friction="0.000000" damping="0.040000" />
+    <origin xyz="0.000000 0.000000 0.000000" rpy="0.000000 0.000000 -0.000000" />
+</joint>
+<link name="hair_04_JNT">
+   <interial>
+       <mass value="0.01" />
+   </interial>
+    <collision>
+        <geometry>
+           <box size="0.065588 0.065588 0.065588" />
+        </geometry>
+    </collision>
+</link>
+<joint name="joint_hair_04_JNT" type="floating" >
+    <parent link="head_JNT" />
+    <child link="hair_04_JNT" />
+    <dynamics friction="0.000000" damping="0.040000" />
+    <origin xyz="0.000000 0.000000 0.000000" rpy="0.000000 0.000000 -0.000000" />
+</joint>
+<link name="hair_04_01_JNT">
+   <interial>
+       <mass value="0.01" />
+   </interial>
+    <collision>
+        <geometry>
+           <box size="0.068793 0.068793 0.068793" />
+        </geometry>
+    </collision>
+</link>
+<joint name="joint_hair_04_01_JNT" type="floating" >
+    <parent link="hair_04_JNT" />
+    <child link="hair_04_01_JNT" />
+    <dynamics friction="0.000000" damping="0.040000" />
+    <origin xyz="0.000000 0.000000 0.000000" rpy="0.000000 0.000000 -0.000000" />
+</joint>
+<link name="hair_04_02_JNT">
+   <interial>
+       <mass value="0.01" />
+   </interial>
+    <collision>
+        <geometry>
+           <box size="0.042491 0.042491 0.042491" />
+        </geometry>
+    </collision>
+</link>
+<joint name="joint_hair_04_02_JNT" type="floating" >
+    <parent link="hair_04_01_JNT" />
+    <child link="hair_04_02_JNT" />
+    <dynamics friction="0.000000" damping="0.040000" />
+    <origin xyz="0.000000 0.000000 0.000000" rpy="0.000000 0.000000 -0.000000" />
+</joint>
+<link name="hair_05_JNT">
+   <interial>
+       <mass value="0.01" />
+   </interial>
+    <collision>
+        <geometry>
+           <box size="0.065588 0.065588 0.065588" />
+        </geometry>
+    </collision>
+</link>
+<joint name="joint_hair_05_JNT" type="floating" >
+    <parent link="head_JNT" />
+    <child link="hair_05_JNT" />
+    <dynamics friction="0.000000" damping="0.040000" />
+    <origin xyz="0.000000 0.000000 0.000000" rpy="0.000000 0.000000 -0.000000" />
+</joint>
+<link name="hair_05_01_JNT">
+   <interial>
+       <mass value="0.01" />
+   </interial>
+    <collision>
+        <geometry>
+           <box size="0.070704 0.070704 0.070704" />
+        </geometry>
+    </collision>
+</link>
+<joint name="joint_hair_05_01_JNT" type="floating" >
+    <parent link="hair_05_JNT" />
+    <child link="hair_05_01_JNT" />
+    <dynamics friction="0.000000" damping="0.040000" />
+    <origin xyz="0.000000 0.000000 0.000000" rpy="0.000000 0.000000 -0.000000" />
+</joint>
+<link name="hair_05_02_JNT">
+   <interial>
+       <mass value="0.01" />
+   </interial>
+    <collision>
+        <geometry>
+           <box size="0.043866 0.043866 0.043866" />
+        </geometry>
+    </collision>
+</link>
+<joint name="joint_hair_05_02_JNT" type="floating" >
+    <parent link="hair_05_01_JNT" />
+    <child link="hair_05_02_JNT" />
+    <dynamics friction="0.000000" damping="0.040000" />
+    <origin xyz="0.000000 0.000000 0.000000" rpy="0.000000 0.000000 -0.000000" />
+</joint>
+<link name="hair_06_JNT">
+   <interial>
+       <mass value="0.01" />
+   </interial>
+    <collision>
+        <geometry>
+           <box size="1.000000 1.000000 1.000000" />
+        </geometry>
+    </collision>
+</link>
+<joint name="joint_hair_06_JNT" type="floating" >
+    <parent link="head_JNT" />
+    <child link="hair_06_JNT" />
+    <dynamics friction="0.000000" damping="0.040000" />
+    <origin xyz="0.000000 0.000000 0.000000" rpy="0.000000 0.000000 -0.000000" />
+</joint>
+<link name="hair_06_01_JNT">
+   <interial>
+       <mass value="0.01" />
+   </interial>
+    <collision>
+        <geometry>
+           <box size="0.072326 0.072326 0.072326" />
+        </geometry>
+    </collision>
+</link>
+<joint name="joint_hair_06_01_JNT" type="floating" >
+    <parent link="hair_06_JNT" />
+    <child link="hair_06_01_JNT" />
+    <dynamics friction="0.000000" damping="0.040000" />
+    <origin xyz="0.000000 0.000000 0.000000" rpy="0.000000 0.000000 -0.000000" />
+</joint>
+<link name="hair_06_02_JNT">
+   <interial>
+       <mass value="0.01" />
+   </interial>
+    <collision>
+        <geometry>
+           <box size="0.062761 0.062761 0.062761" />
+        </geometry>
+    </collision>
+</link>
+<joint name="joint_hair_06_02_JNT" type="floating" >
+    <parent link="hair_06_01_JNT" />
+    <child link="hair_06_02_JNT" />
+    <dynamics friction="0.000000" damping="0.040000" />
+    <origin xyz="-0.066113 0.613543 0.103580" rpy="0.000000 0.000000 -0.000000" />
+</joint>
+<link name="r_earring_accessory_JNT">
+   <interial>
+       <mass value="0.01" />
+   </interial>
+    <collision>
+        <geometry>
+            <sphere radius="0.025000" />
+        </geometry>
+    </collision>
+</link>
+<joint name="joint_r_earring_accessory_JNT" type="floating" >
+    <parent link="head_JNT" />
+    <child link="r_earring_accessory_JNT" />
+    <dynamics friction="0.000000" damping="0.040000" />
+    <origin xyz="-0.115987 -0.034802 -0.002251" rpy="0.000000 0.000000 -0.000000" />
+</joint>
+<link name="l_earring_accessory_JNT">
+   <interial>
+       <mass value="0.01" />
+   </interial>
+    <collision>
+        <geometry>
+            <sphere radius="0.025000" />
+        </geometry>
+    </collision>
+</link>
+<joint name="joint_l_earring_accessory_JNT" type="floating" >
+    <parent link="head_JNT" />
+    <child link="l_earring_accessory_JNT" />
+    <dynamics friction="0.000000" damping="0.040000" />
+    <origin xyz="0.117393 -0.034802 -0.002251" rpy="0.000000 0.000000 -0.000000" />
+</joint>
+<link name="r_shoulder_JNT">
+   <interial>
+       <mass value="3.0" />
+   </interial>
+    <collision>
+        <geometry>
+            <cylinder radius="0.060000" length="0.180000" />
+        </geometry>
+    </collision>
+</link>
+<joint name="joint_r_shoulder_JNT" type="fixed" >
+    <parent link="spine2_JNT" />
+    <child link="r_shoulder_JNT" />
+    <dynamics friction="0.000000" damping="0.040000" />
+    <origin xyz="-0.085648 0.058688 -0.018444" rpy="0.000000 0.000000 -0.000000" />
+</joint>
+<link name="r_arm_JNT">
+   <interial>
+       <mass value="3.0" />
+   </interial>
+    <collision>
+        <geometry>
+            <cylinder radius="0.040000" length="0.120000" />
+        </geometry>
+    </collision>
+</link>
+<joint name="joint_r_arm_JNT" type="floating" >
+    <parent link="r_shoulder_JNT" />
+    <child link="r_arm_JNT" />
+    <dynamics friction="0.000000" damping="0.040000" />
+    <origin xyz="-0.190469 0.002851 -0.001221" rpy="0.000000 0.000000 -0.000000" />
+</joint>
+<link name="r_forearm_JNT">
+   <interial>
+       <mass value="2.5" />
+   </interial>
+    <collision>
+        <geometry>
+            <cylinder radius="0.030000" length="0.090000" />
+        </geometry>
+    </collision>
+</link>
+<joint name="joint_r_forearm_JNT" type="revolute" >
+    <parent link="r_arm_JNT" />
+    <child link="r_forearm_JNT" />
+    <dynamics friction="0.000000" damping="0.040000" />
+    <origin xyz="-0.240328 -0.000001 0.018851" rpy="0.000000 0.000000 -0.000000" />
+    <limit lower="-2.268928" upper="0.000000" />
+    <axis xyz="0.000000 -1.000000 0.000000" />
+</joint>
+<link name="r_hand_JNT">
+   <interial>
+       <mass value="1.0" />
+   </interial>
+    <collision>
+        <geometry>
+            <cylinder radius="0.035000" length="0.105000" />
+        </geometry>
+    </collision>
+</link>
+<joint name="joint_r_hand_JNT" type="floating" >
+    <parent link="r_forearm_JNT" />
+    <child link="r_hand_JNT" />
+    <dynamics friction="0.000000" damping="0.040000" />
+    <origin xyz="-0.145405 -0.005891 0.025118" rpy="0.000000 0.000000 -0.000000" />
+</joint>
+<link name="r_upleg_JNT">
+   <interial>
+       <mass value="7.0" />
+   </interial>
+    <collision>
+        <geometry>
+            <cylinder radius="0.160000" length="0.480000" />
+        </geometry>
+    </collision>
+</link>
+<joint name="joint_r_upleg_JNT" type="floating" >
+    <parent link="hips_JNT" />
+    <child link="r_upleg_JNT" />
+    <dynamics friction="0.000000" damping="0.040000" />
+    <origin xyz="-0.081457 -0.208145 0.002232" rpy="0.000000 0.000000 -0.000000" />
+</joint>
+<link name="r_leg_JNT">
+   <interial>
+       <mass value="4.0" />
+   </interial>
+    <collision>
+        <geometry>
+            <cylinder radius="0.185000" length="0.555000" />
+        </geometry>
+    </collision>
+</link>
+<joint name="joint_r_leg_JNT" type="revolute" >
+    <parent link="r_upleg_JNT" />
+    <child link="r_leg_JNT" />
+    <dynamics friction="0.000000" damping="0.040000" />
+    <origin xyz="-0.002832 -0.384417 -0.010570" rpy="0.000000 0.000000 -0.000000" />
+    <limit lower="0.000000" upper="2.268928" />
+    <axis xyz="1.000000 0.000000 0.000000" />
+</joint>
+<link name="r_foot_JNT">
+   <interial>
+       <mass value="2.0" />
+   </interial>
+    <collision>
+        <geometry>
+            <cylinder radius="0.040000" length="0.120000" />
+        </geometry>
+    </collision>
+</link>
+<joint name="joint_r_foot_JNT" type="floating" >
+    <parent link="r_leg_JNT" />
+    <child link="r_foot_JNT" />
+    <dynamics friction="0.000000" damping="0.040000" />
+    <origin xyz="-0.001447 -0.216052 0.046643" rpy="0.000000 0.000000 -0.000000" />
+</joint>
+<link name="r_toebase_JNT">
+   <interial>
+       <mass value="1.0" />
+   </interial>
+    <collision>
+        <geometry>
+            <cylinder radius="0.020000" length="0.060000" />
+        </geometry>
+    </collision>
+</link>
+<joint name="joint_r_toebase_JNT" type="revolute" >
+    <parent link="r_foot_JNT" />
+    <child link="r_toebase_JNT" />
+    <dynamics friction="0.000000" damping="0.040000" />
+    <origin xyz="-0.000098 -0.032490 0.059404" rpy="0.000000 0.000000 -0.000000" />
+    <limit lower="-3.141593" upper="3.141593" />
+    <axis xyz="1.000000 0.000000 0.000000" />
+</joint>
+</robot>

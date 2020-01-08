@@ -1,0 +1,17 @@
+{
+"name" : "hair_long29",
+"type" : "Hair",
+"attachbone" : "head_JNT",
+"avt" : "hair/myemojihair_Long29_Male.avt",
+"physics" : "hair/myemojihair_Long29_Male.urdf",
+"model" : "hair/myemojihair_Long29_Male.gltf",
+"texture" : "curly,braid",
+"length" : "long",
+"description" : "long straight braids",
+"hat" : "false",
+"angularspringdamping" : 0.5,
+"angularspringstiffness" : 0.55,
+"angularlimits" : 0.1,
+"collisiongroup" : 6,
+"bangs" : "false"
+}

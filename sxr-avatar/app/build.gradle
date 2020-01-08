@@ -17,6 +17,13 @@ android {
         }
     }
 
+    compileSdkVersion 28
+    defaultConfig {
+        minSdkVersion 23
+        targetSdkVersion 28
+        multiDexEnabled true
+    }
+
     sourceSets.main {
         jni.srcDirs = [] // no auto generation of Android.mk
         jniLibs.srcDir 'libs' // pre-compiled libraries
@@ -42,4 +49,5 @@ dependencies
     {
         implementation "com.samsungxr:sxr-physics:$sxrVersion"
     }
+    implementation "androidx.appcompat:appcompat:1.0.0"
 }

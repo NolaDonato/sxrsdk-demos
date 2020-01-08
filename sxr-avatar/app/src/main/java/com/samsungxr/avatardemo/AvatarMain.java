@@ -46,7 +46,7 @@ public class AvatarMain extends SXRMain
     //private final String[] mAnimationPaths =  { "YBot/Zombie_Stand_Up_mixamo.com.bvh", "YBot/Football_Hike_mixamo.com.bvh" };
     //private final String mBoneMapPath = "animation/mixamo/mixamo_map.txt";
     private final String mAvatarDesc = "female/FemaleBody.json";
-    private final String mHairDesc = "hair/hair_long25.json";
+    private final String mHairDesc = "hair/hair_long29.json";
     private final String[] mAnimationPaths =  { "animations/Motion_Body_HappyDance.bvh" };
     private static final String TAG = "AVATAR";
     private SXRContext mContext;
@@ -149,7 +149,7 @@ public class AvatarMain extends SXRMain
             if (!mAvatar.isRunning())
             {
                 loadHair(mHairDesc);
-                loadNextAnimation(mAvatar, mBoneMap);
+//                loadNextAnimation(mAvatar, mBoneMap);
             }
             mAvatarPhysics.getPhysicsLoader().getEventReceiver().removeListener(mPhysicsListener);
         }
@@ -287,7 +287,7 @@ public class AvatarMain extends SXRMain
         cm.disableCollision(HAIR_COLLISION_GROUP, HAIR_COLLISION_GROUP);
         cm.enableCollision(HAIR_COLLISION_GROUP, SXRCollisionMatrix.KINEMATIC_GROUP);
 
-        mWorld = new SXRWorld(mScene, cm, true);
+        mWorld = new SXRWorld(mScene, cm, false);
         // Include the following 3 lines for Bullet debug draw
 //        SXRNode debugDraw = mWorld.setupDebugDraw(20000);
 //        mScene.addNode(debugDraw);
