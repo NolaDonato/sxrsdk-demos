@@ -148,8 +148,8 @@ public class AvatarMain extends SXRMain
         {
             if (!mAvatar.isRunning())
             {
-                loadHair(mHairDesc);
-//                loadNextAnimation(mAvatar, mBoneMap);
+//                loadHair(mHairDesc);
+                loadNextAnimation(mAvatar, mBoneMap);
             }
             mAvatarPhysics.getPhysicsLoader().getEventReceiver().removeListener(mPhysicsListener);
         }
@@ -289,9 +289,9 @@ public class AvatarMain extends SXRMain
 
         mWorld = new SXRWorld(mScene, cm, false);
         // Include the following 3 lines for Bullet debug draw
-//        SXRNode debugDraw = mWorld.setupDebugDraw(20000);
-//        mScene.addNode(debugDraw);
-//        mWorld.setDebugMode(-1);
+        SXRNode debugDraw = mWorld.setupDebugDraw(20000);
+        mScene.addNode(debugDraw);
+        mWorld.setDebugMode(-1);
 
         floor.attachCollider(floorCollider);
         floor.attachComponent(floorBody);
