@@ -136,7 +136,7 @@ public class MainScript extends SXRMain implements SXRNode.ComponentVisitor {
         mBallProto = new SXRSphereNode(sxrContext, true, new SXRMaterial(sxrContext, SXRMaterial.SXRShaderType.Phong.ID));
         initScene(sxrContext, mScene);
         initLabels(sxrContext, mScene);
-        mWorld = new SXRWorld(mScene, MainHelper.collisionMatrix);
+        mWorld = new SXRWorld(mScene);
         mScene.getEventReceiver().addListener(this);
         sxrContext.getInputManager().selectController(mControllerSelector);
         mWorld.setEnable(true);
@@ -187,7 +187,7 @@ public class MainScript extends SXRMain implements SXRNode.ComponentVisitor {
     }
 
     private static void addGround(SXRContext context, SXRScene scene) {
-        scene.addNode(MainHelper.createGround(context, 0.0f, 0.0f, 0.0f));
+        scene.addNode(MainHelper.createGround(context));
     }
 
     private void addCylinderGroup(SXRContext context, SXRScene scene) {
@@ -216,7 +216,10 @@ public class MainScript extends SXRMain implements SXRNode.ComponentVisitor {
 
     private static void addCylinder(SXRContext context, SXRScene scene, float x, float y, float z,
                                     int drawable) throws IOException {
-        scene.addNode(MainHelper.createCylinder(context, x, y, z, drawable));
+        SXRNode cylinder = MainHelper.createCylinder(context, x, y, z, drawable);
+
+        cylinder.setName("cylinder");
+        scene.addNode(cylinder);
     }
 
     @Override
@@ -235,7 +238,7 @@ public class MainScript extends SXRMain implements SXRNode.ComponentVisitor {
                     5 * forward[0] + trans.getPositionX(),
                     5 * forward[1] + trans.getPositionY(),
                     5 * forward[2] + trans.getPositionZ(), force);
-
+            ball.setName("ball" + mNumBalls);
             mNumBalls++;
 
             mBallsLabel.setText("Balls: " + (MAX_BALLS - mNumBalls));
@@ -306,21 +309,18 @@ public class MainScript extends SXRMain implements SXRNode.ComponentVisitor {
 
     @Override
     public boolean visit(SXRComponent sxrComponent) {
-        if (sxrComponent.getTransform().getPositionY() < SCORE_OFFSET) {
-            mScene.removeNode(sxrComponent.getOwnerObject());
-            doScore((SXRRigidBody) sxrComponent);
+        if (sxrComponent.getTransform().getPositionY() < SCORE_OFFSET)
+        {
+            SXRNode owner = sxrComponent.getOwnerObject();
+            mScene.removeNode(owner);
+            if (!"cylinder".equals(owner.getName()))
+            {
+                mScore++;
+                mScoreLabel.setText("Score: " + mScore);
+            }
         }
 
         return false;
-    }
-
-    private void doScore(SXRRigidBody body) {
-        if (body.getCollisionGroup() != MainHelper.COLLISION_GROUP_CYLINDER) {
-            return;
-        }
-
-        mScore ++;
-        mScoreLabel.setText("Score: " + mScore);
     }
 
     private boolean gameFinished() {

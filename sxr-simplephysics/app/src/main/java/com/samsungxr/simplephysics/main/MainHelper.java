@@ -21,6 +21,8 @@ import com.samsungxr.physics.SXRRigidBody;
 import com.samsungxr.nodes.SXRCubeNode;
 import com.samsungxr.nodes.SXRTextViewNode;
 
+import org.joml.Vector3f;
+
 import java.io.IOException;
 import java.util.List;
 
@@ -30,22 +32,7 @@ import java.util.List;
 public class MainHelper {
     private static final float CYLINDER_MASS = 0.3f;
     private static final float BALL_MASS = 0.5f;
-    private static final int COLLISION_GROUP_INFINITY_GROUND = 0;
-    private static final int COLLISION_GROUP_GROUND = 1;
-    private static final int COLLISION_GROUP_BALL = 3;
     public static final int COLLISION_GROUP_CYLINDER = 2;
-
-    public static SXRCollisionMatrix collisionMatrix;
-
-    static {
-        collisionMatrix = new SXRCollisionMatrix();
-
-        collisionMatrix.setCollisionFilterMask(COLLISION_GROUP_INFINITY_GROUND, (short) 0x0);
-
-        collisionMatrix.enableCollision(COLLISION_GROUP_CYLINDER, COLLISION_GROUP_GROUND);
-        collisionMatrix.enableCollision(COLLISION_GROUP_BALL, COLLISION_GROUP_GROUND);
-        collisionMatrix.enableCollision(COLLISION_GROUP_BALL, COLLISION_GROUP_CYLINDER);
-    }
 
     public static SXRNode createPointLight(SXRContext context, float x, float y, float z) {
         SXRNode lightObject = new SXRNode(context);
@@ -82,28 +69,29 @@ public class MainHelper {
         return lightObject;
     }
 
-    public static SXRNode createGround(SXRContext context, float x, float y, float z) {
+    public static SXRNode createGround(SXRContext context)
+    {
         SXRTexture texture = context.getAssetLoader().loadTexture(new SXRAndroidResource(context, R.drawable.orange));
         SXRMaterial material = new SXRMaterial(context, SXRMaterial.SXRShaderType.Phong.ID);
-
         SXRNode groundObject = new SXRCubeNode(context, true, texture);
-
-        groundObject.getRenderData().setMaterial(material);
-        groundObject.getRenderData().getMaterial().setTexture("diffuseTexture", texture);
-        groundObject.getRenderData().getMaterial().setMainTexture(texture);
+        SXRRenderData rd = groundObject.getRenderData();
+        rd.setMaterial(material);
+        rd.getMaterial().setTexture("diffuseTexture", texture);
+        rd.getMaterial().setMainTexture(texture);
         groundObject.getTransform().setScale(15.0f, 0.5f, 15.0f);
-        groundObject.getTransform().setPosition(x, y, z);
+        groundObject.getTransform().setPosition(0, -0.25f, 0);
 
         // Collider
-        SXRMeshCollider meshCollider = new SXRMeshCollider(context, groundObject.getRenderData().getMesh());
+        SXRMeshCollider meshCollider = new SXRMeshCollider(context, true);
         groundObject.attachCollider(meshCollider);
 
         // Physics body
-        SXRRigidBody body = new SXRRigidBody(context, 0.0f, COLLISION_GROUP_GROUND);
+        SXRRigidBody body = new SXRRigidBody(context, 0.0f);
         body.setRestitution(0.5f);
         body.setFriction(1.0f);
+        body.setScale(new Vector3f(15.0f, 0.5f, 15.0f));
         groundObject.attachComponent(body);
-
+        groundObject.setName("ground");
         return groundObject;
     }
 
@@ -120,10 +108,11 @@ public class MainHelper {
 
         // Collider
         SXRMeshCollider meshCollider = new SXRMeshCollider(context, false);
+//        meshCollider.setMeshType(SXRMeshCollider.MESH_TYPE_CONVEX_HULL);
         cylinderObject.attachCollider(meshCollider);
 
         // Physics body
-        SXRRigidBody body = new SXRRigidBody(context, CYLINDER_MASS, COLLISION_GROUP_CYLINDER);
+        SXRRigidBody body = new SXRRigidBody(context, CYLINDER_MASS);
         body.setRestitution(0.5f);
         body.setFriction(5.0f);
         cylinderObject.attachComponent(body);
@@ -143,9 +132,10 @@ public class MainHelper {
         sphereCollider.setRadius(1.0f);
         ballGeometry.attachCollider(sphereCollider);
 
-        SXRRigidBody rigidBody = new SXRRigidBody(context, BALL_MASS, COLLISION_GROUP_BALL);
+        SXRRigidBody rigidBody = new SXRRigidBody(context, BALL_MASS);
         rigidBody.setRestitution(1.5f);
         rigidBody.setFriction(0.5f);
+        rigidBody.setScale(new Vector3f(0.7f, 0.7f, 0.7f));
         ballGeometry.attachComponent(rigidBody);
         rigidBody.applyCentralForce(force[0], force[1], force[2]);
         return ballGeometry;
